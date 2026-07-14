@@ -4,8 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import create_app
-from api.dependencies import get_search_service
-from models.search import SearchResponse, SearchHit, ProductResponse
+from api.dependencies import get_search_engine
+from models.search import SearchResponse, SearchHit
+from models.search_document import SearchDocument, Nutrition, NutritionItem, Flags, ProductMetadata
 
 
 @pytest.fixture
@@ -36,20 +37,22 @@ def sample_raw_nutriments() -> str:
 @pytest.fixture
 def sample_normalized_product() -> dict:
     return {
-        "code": "0008577002786",
+        "id": "0008577002786",
         "product_name": "Organic Vermont Maple Syrup",
-        "product_name_clean": "Organic Vermont Maple Syrup",
-        "brands": "Butternut Mountain Farm",
-        "brands_clean": "Butternut Mountain Farm",
-        "categories": "Sweeteners,Syrups",
-        "categories_clean": "Sweeteners,Syrups",
-        "ingredients_text": "Pure organic maple syrup",
-        "ingredients_clean": "Pure organic maple syrup",
-        "nutriments": {"energy": {"value": 333.0, "per_100g": 1393.0, "unit": "kcal"}},
-        "nutriscore_grade": "e",
-        "nova_group": 2,
-        "ecoscore_grade": "b",
-        "completeness": 0.6625,
+        "brand": "Butternut Mountain Farm",
+        "category": "Sweeteners,Syrups",
+        "ingredients": "Pure organic maple syrup",
+        "nutrition": {
+            "energy": {"value": 333.0, "per_100g": 1393.0, "unit": "kcal"},
+            "raw_nutrients": {},
+        },
+        "flags": {"is_organic": True, "is_vegan": False, "is_vegetarian": False},
+        "metadata": {
+            "nutriscore_grade": "e",
+            "nova_group": 2,
+            "ecoscore_grade": "b",
+            "completeness": 0.6625,
+        },
         "search_text": (
             "Organic Vermont Maple Syrup Butternut Mountain Farm "
             "Sweeteners,Syrups Pure organic maple syrup"
@@ -64,46 +67,50 @@ def sample_normalized_product() -> dict:
 
 
 @pytest.fixture
-def mock_search_service() -> MagicMock:
-    service = MagicMock()
-    product = ProductResponse(
-        code="0008577002786",
+def mock_search_engine() -> MagicMock:
+    engine = MagicMock()
+    product = SearchDocument(
+        id="0008577002786",
         product_name="Organic Vermont Maple Syrup",
-        brands="Butternut Mountain Farm",
-        categories="Sweeteners,Syrups",
-        ingredients_text="Pure organic maple syrup",
-        nutriments={},
-        nutriscore_grade="e",
-        nova_group=2,
-        ecoscore_grade="b",
-        completeness=0.6625,
+        brand="Butternut Mountain Farm",
+        category="Sweeteners,Syrups",
+        ingredients="Pure organic maple syrup",
+        nutrition=Nutrition(
+            energy=NutritionItem(value=333.0, per_100g=1393.0, unit="kcal")
+        ) if "NutritionItem" in globals() else Nutrition(),
+        flags=Flags(),
+        metadata=ProductMetadata(
+            nutriscore_grade="e",
+            nova_group=2,
+            ecoscore_grade="b",
+            completeness=0.6625,
+        ),
+        search_text=(
+            "Organic Vermont Maple Syrup Butternut Mountain Farm "
+            "Sweeteners,Syrups Pure organic maple syrup"
+        ),
+        semantic_document=(
+            "Product: Organic Vermont Maple Syrup\n\n"
+            "Brand: Butternut Mountain Farm\n\n"
+            "Category: Sweeteners,Syrups\n\n"
+            "Ingredients:\nPure organic maple syrup"
+        ),
     )
-    service.search.return_value = SearchResponse(
+    engine.search.return_value = SearchResponse(
         total=1,
         hits=[SearchHit(score=1.0, product=product)],
         query="maple syrup",
         took_ms=5,
     )
-    service.get_product.return_value = product
-    service.search_by_brand.return_value = SearchResponse(
-        total=1,
-        hits=[SearchHit(score=1.0, product=product)],
-        query="Butternut",
-        took_ms=3,
-    )
-    service.search_by_category.return_value = SearchResponse(
-        total=1,
-        hits=[SearchHit(score=1.0, product=product)],
-        query="Sweeteners",
-        took_ms=3,
-    )
-    return service
+    engine.get_product.return_value = product
+    engine.autocomplete.return_value = ["Organic Vermont Maple Syrup"]
+    return engine
 
 
 @pytest.fixture
-def test_app(mock_search_service: MagicMock):
+def test_app(mock_search_engine: MagicMock):
     app = create_app()
-    app.dependency_overrides[get_search_service] = lambda: mock_search_service
+    app.dependency_overrides[get_search_engine] = lambda: mock_search_engine
     yield app
     app.dependency_overrides.clear()
 
@@ -111,3 +118,4 @@ def test_app(mock_search_service: MagicMock):
 @pytest.fixture
 def test_client(test_app):
     return TestClient(test_app)
+

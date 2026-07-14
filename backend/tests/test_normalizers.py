@@ -1,146 +1,82 @@
-from pipeline.normalizers import (
-    normalize_product_name,
-    normalize_brands,
-    normalize_categories,
-    normalize_ingredients,
-    normalize_nutriments,
-    normalize_nutriscore_grade,
-    normalize_nova_group,
-    normalize_ecoscore_grade,
-    normalize_completeness,
+from adapters.off_adapter import (
+    parse_product_name,
+    parse_ingredients_text,
+    parse_nutriments,
+    safe_str,
+    safe_float,
+    safe_int,
 )
+from models.raw_product import RawProduct
+from builders.search_document_builder import SearchDocumentBuilder
 
 
-class TestNormalizeProductName:
-    def test_parses_multilingual_field(self, sample_raw_product_name):
-        original, cleaned = normalize_product_name(sample_raw_product_name)
-        assert original == "Organic Vermont Maple Syrup"
-        assert cleaned == "Organic Vermont Maple Syrup"
+class TestOFFAdapterParsing:
+    def test_parses_multilingual_name_with_escaped_quotes(self, sample_raw_product_name):
+        text = parse_product_name(sample_raw_product_name)
+        assert text == "Organic Vermont Maple Syrup"
 
-    def test_handles_empty_string(self):
-        original, cleaned = normalize_product_name("")
-        assert original == ""
-        assert cleaned == ""
+    def test_parses_multilingual_ingredients(self, sample_raw_ingredients):
+        text = parse_ingredients_text(sample_raw_ingredients)
+        assert text == "Pure organic maple syrup"
 
-    def test_handles_empty_list(self):
-        original, cleaned = normalize_product_name("[]")
-        assert original == ""
-        assert cleaned == ""
-
-    def test_handles_plain_text(self):
-        original, cleaned = normalize_product_name("Nutella")
-        assert original == "Nutella"
-        assert cleaned == "Nutella"
-
-
-class TestNormalizeBrands:
-    def test_preserves_brand_text(self):
-        original, cleaned = normalize_brands("Ferrero")
-        assert original == "Ferrero"
-        assert cleaned == "Ferrero"
-
-    def test_trims_whitespace(self):
-        original, cleaned = normalize_brands("  Ferrero  ")
-        assert cleaned == "Ferrero"
-
-    def test_handles_empty(self):
-        original, cleaned = normalize_brands("")
-        assert original == ""
-        assert cleaned == ""
-
-
-class TestNormalizeCategories:
-    def test_preserves_categories(self):
-        original, cleaned = normalize_categories("Sweeteners,Syrups")
-        assert cleaned == "Sweeteners,Syrups"
-
-    def test_trims_whitespace(self):
-        original, cleaned = normalize_categories("  Sweeteners , Syrups  ")
-        assert cleaned == "Sweeteners , Syrups"
-
-
-class TestNormalizeIngredients:
-    def test_parses_multilingual_field(self, sample_raw_ingredients):
-        original, cleaned = normalize_ingredients(sample_raw_ingredients)
-        assert original == "Pure organic maple syrup"
-        assert cleaned == "Pure organic maple syrup"
-
-    def test_handles_empty_list(self):
-        original, cleaned = normalize_ingredients("[]")
-        assert original == ""
-        assert cleaned == ""
-
-    def test_handles_plain_text(self):
-        original, cleaned = normalize_ingredients("water, sugar, cocoa")
-        assert original == "water, sugar, cocoa"
-        assert cleaned == "water, sugar, cocoa"
-
-
-class TestNormalizeNutriments:
-    def test_parses_nutriments(self, sample_raw_nutriments):
-        result = normalize_nutriments(sample_raw_nutriments)
+    def test_parses_nutriments_with_values(self, sample_raw_nutriments):
+        result = parse_nutriments(sample_raw_nutriments)
         assert "energy" in result
         assert result["energy"]["value"] == 333.0
         assert result["energy"]["per_100g"] == 1393.0
         assert result["energy"]["unit"] == "kcal"
 
-    def test_handles_empty(self):
-        assert normalize_nutriments("") == {}
-
-    def test_handles_empty_list(self):
-        assert normalize_nutriments("[]") == {}
-
-
-class TestNormalizeNutriscoreGrade:
-    def test_normalizes_valid_grade(self):
-        assert normalize_nutriscore_grade("e") == "e"
-        assert normalize_nutriscore_grade("E") == "e"
-        assert normalize_nutriscore_grade("a") == "a"
-
-    def test_returns_none_for_unknown(self):
-        assert normalize_nutriscore_grade("unknown") is None
-        assert normalize_nutriscore_grade("not-applicable") is None
-
-    def test_returns_none_for_empty(self):
-        assert normalize_nutriscore_grade("") is None
-        assert normalize_nutriscore_grade(None) is None  # type: ignore
+    def test_handles_empty_fields(self):
+        assert parse_product_name("") == ""
+        assert parse_ingredients_text("[]") == ""
+        assert parse_nutriments("") == {}
 
 
-class TestNormalizeNovaGroup:
-    def test_normalizes_valid_group(self):
-        assert normalize_nova_group("1.0") == 1
-        assert normalize_nova_group("2") == 2
-        assert normalize_nova_group("4.0") == 4
+class TestSearchDocumentBuilder:
+    def test_builder_maps_fields_and_computes_flags(self):
+        raw = RawProduct(
+            code="12345",
+            product_name="Bio Organic Granola",
+            brands="Whole Foods",
+            categories="Breakfast cereals, Granola",
+            ingredients_text="Organic rolled oats, organic sugar, almonds, vegan cocoa",
+            nutriments={
+                "energy": {"value": 450.0, "per_100g": 450.0, "unit": "kcal"},
+                "fat": {"value": 15.0, "per_100g": 15.0, "unit": "g"},
+            },
+            nutriscore_grade="a",
+            nova_group=3,
+            ecoscore_grade="b",
+            completeness=0.88,
+        )
 
-    def test_returns_none_for_empty(self):
-        assert normalize_nova_group("") is None
+        doc = SearchDocumentBuilder.build(raw)
 
-    def test_returns_none_for_invalid(self):
-        assert normalize_nova_group("invalid") is None
+        # Basic properties
+        assert doc.id == "12345"
+        assert doc.product_name == "Bio Organic Granola"
+        assert doc.brand == "Whole Foods"
+        assert doc.category == "Breakfast cereals, Granola"
+        assert doc.ingredients == "Organic rolled oats, organic sugar, almonds, vegan cocoa"
 
+        # Nutrition Pydantic model
+        assert doc.nutrition.energy is not None
+        assert doc.nutrition.energy.value == 450.0
+        assert doc.nutrition.fat.value == 15.0
+        assert doc.nutrition.saturates is None
 
-class TestNormalizeEcoscoreGrade:
-    def test_normalizes_valid_grade(self):
-        assert normalize_ecoscore_grade("b") == "b"
-        assert normalize_ecoscore_grade("a-plus") == "a-plus"
+        # Flags auto-derived by builder
+        assert doc.flags.is_organic is True
+        assert doc.flags.is_vegan is True
+        assert doc.flags.is_vegetarian is True
 
-    def test_returns_none_for_unknown(self):
-        assert normalize_ecoscore_grade("unknown") is None
+        # Metadata model
+        assert doc.metadata.nutriscore_grade == "a"
+        assert doc.metadata.nova_group == 3
+        assert doc.metadata.completeness == 0.88
 
-    def test_returns_none_for_empty(self):
-        assert normalize_ecoscore_grade("") is None
+        # Text concatenation
+        assert "Bio Organic Granola" in doc.search_text
+        assert "Whole Foods" in doc.search_text
+        assert "Ingredients:\nOrganic rolled oats" in doc.semantic_document
 
-
-class TestNormalizeCompleteness:
-    def test_normalizes_valid_value(self):
-        assert normalize_completeness("0.6625") == 0.6625
-        assert normalize_completeness("1.0") == 1.0
-        assert normalize_completeness("0.0") == 0.0
-
-    def test_clamps_values(self):
-        assert normalize_completeness("1.5") == 1.0
-        assert normalize_completeness("-0.5") == 0.0
-
-    def test_returns_zero_for_invalid(self):
-        assert normalize_completeness("") == 0.0
-        assert normalize_completeness("abc") == 0.0

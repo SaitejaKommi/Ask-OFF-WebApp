@@ -1,33 +1,33 @@
-from search.ranking import RankingConfig
+from retrieval.ranking import RankingManager
 
 
-class TestRankingConfig:
+class TestRankingManager:
     def test_product_name_has_highest_boost(self):
-        config = RankingConfig()
-        assert config.field_boosts["product_name_clean"] >= config.field_boosts["brands_clean"]
-        assert config.field_boosts["product_name_clean"] >= config.field_boosts["ingredients_clean"]
-        assert config.field_boosts["product_name_clean"] >= config.field_boosts["categories_clean"]
+        manager = RankingManager()
+        boosts = manager.get_boosts()
+        assert boosts["product_name"] >= boosts["brand"]
+        assert boosts["product_name"] >= boosts["ingredients"]
+        assert boosts["product_name"] >= boosts["category"]
 
     def test_brand_boost_higher_than_ingredients(self):
-        config = RankingConfig()
-        assert config.field_boosts["brands_clean"] >= config.field_boosts["ingredients_clean"]
+        manager = RankingManager()
+        boosts = manager.get_boosts()
+        assert boosts["brand"] >= boosts["ingredients"]
 
     def test_all_expected_fields_present(self):
-        config = RankingConfig()
+        manager = RankingManager()
+        boosts = manager.get_boosts()
         expected = [
-            "product_name_clean",
             "product_name",
-            "brands_clean",
-            "brands",
+            "brand",
+            "category",
+            "ingredients",
             "search_text",
-            "ingredients_clean",
-            "ingredients_text",
-            "categories_clean",
-            "categories",
         ]
         for field in expected:
-            assert field in config.field_boosts, f"Missing field boost: {field}"
+            assert field in boosts, f"Missing field boost: {field}"
 
     def test_completeness_weight_is_reasonable(self):
-        config = RankingConfig()
-        assert 0.0 <= config.completeness_weight <= 1.0
+        manager = RankingManager()
+        assert 0.0 <= manager.completeness_weight <= 1.0
+

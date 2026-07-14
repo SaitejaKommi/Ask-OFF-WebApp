@@ -1,94 +1,82 @@
-from search.queries import (
-    build_search_query,
-    build_product_query,
-    build_brand_query,
-    build_category_query,
-    build_autocomplete_query,
-)
-from search.ranking import RankingConfig
+from unittest.mock import MagicMock
+from repositories.opensearch_repository import OpenSearchSearchRepository
 from search.mappings import PRODUCT_INDEX_MAPPING
+from models.search_document import SearchDocument
 
 
-class TestBuildSearchQuery:
-    def test_returns_valid_structure(self):
-        query = build_search_query("maple syrup", RankingConfig())
-        assert query["size"] == 20
-        assert query["from"] == 0
-        assert "bool" in query["query"]
-        assert "should" in query["query"]["bool"]
+class TestOpenSearchSearchRepository:
+    def test_search_constructs_valid_opensearch_dsl(self):
+        mock_client = MagicMock()
+        # Mock the search response format
+        mock_client.search.return_value = {
+            "hits": {
+                "total": {"value": 1},
+                "hits": [
+                    {
+                        "_score": 1.5,
+                        "_source": {
+                            "id": "100",
+                            "product_name": "Organic Honey",
+                            "brand": "Bee",
+                            "category": "Sweeteners",
+                            "ingredients": "Honey",
+                            "nutrition": {},
+                            "flags": {},
+                            "metadata": {"completeness": 1.0},
+                            "search_text": "honey",
+                            "semantic_document": "honey",
+                        },
+                    }
+                ],
+            }
+        }
 
-    def test_includes_multi_match_with_boosts(self):
-        query = build_search_query("test", RankingConfig())
-        should = query["query"]["bool"]["should"]
-        mm = should[0]["multi_match"]
-        assert "product_name_clean^3.0" in mm["fields"]
-        assert "brands_clean^2.0" in mm["fields"]
-        assert mm["fuzziness"] == "AUTO"
-
-    def test_respects_size_and_offset(self):
-        query = build_search_query("test", RankingConfig(), size=10, from_=5)
-        assert query["size"] == 10
-        assert query["from"] == 5
-
-
-class TestBuildProductQuery:
-    def test_uses_term_query(self):
-        query = build_product_query("0008577002786")
-        assert query["query"]["term"]["code"] == "0008577002786"
-
-
-class TestBuildBrandQuery:
-    def test_uses_match_query(self):
-        query = build_brand_query("Ferrero")
-        assert "match" in query["query"]
-        assert query["query"]["match"]["brands_clean"]["query"] == "Ferrero"
-
-    def test_uses_and_operator(self):
-        query = build_brand_query("Butternut Mountain Farm")
-        assert query["query"]["match"]["brands_clean"]["operator"] == "and"
-
-
-class TestBuildCategoryQuery:
-    def test_uses_match_query(self):
-        query = build_category_query("Sweeteners")
-        assert "match" in query["query"]
-        assert query["query"]["match"]["categories_clean"]["query"] == "Sweeteners"
-
-
-class TestBuildAutocompleteQuery:
-    def test_uses_bool_prefix(self):
-        query = build_autocomplete_query("map")
-        assert query["query"]["multi_match"]["type"] == "bool_prefix"
-        assert (
-            "product_name_clean.autocomplete"
-            in query["query"]["multi_match"]["fields"]
+        repo = OpenSearchSearchRepository(client=mock_client)
+        total, hits = repo.search(
+            query="honey",
+            filters={"brand": "Bee"},
+            size=10,
+            from_=0,
         )
+
+        assert total == 1
+        assert len(hits) == 1
+        score, doc = hits[0]
+        assert score == 1.5
+        assert isinstance(doc, SearchDocument)
+        assert doc.id == "100"
+        assert doc.product_name == "Organic Honey"
+
+        # Assert search body DSL was built correctly
+        body_passed = mock_client.search.call_args[1]["body"]
+        assert body_passed["size"] == 10
+        assert body_passed["from"] == 0
+        # Check that brand filter was appended
+        must_clause = body_passed["query"]["function_score"]["query"]["bool"]["must"]
+        assert must_clause[0]["match"]["brand"]["query"] == "Bee"
 
 
 class TestMappingStructure:
     def test_has_required_fields(self):
         props = PRODUCT_INDEX_MAPPING["mappings"]["properties"]
         required = [
-            "code",
+            "id",
+            "core_product_id",
+            "variant_id",
             "product_name",
-            "product_name_clean",
-            "brands",
-            "brands_clean",
-            "categories",
-            "categories_clean",
-            "ingredients_text",
-            "ingredients_clean",
-            "nutriments",
-            "nutriscore_grade",
-            "nova_group",
-            "ecoscore_grade",
-            "completeness",
+            "brand",
+            "category",
+            "ingredients",
+            "nutrition",
+            "flags",
+            "metadata",
             "search_text",
             "semantic_document",
         ]
         for field in required:
             assert field in props, f"Missing field: {field}"
 
-    def test_nutriments_not_indexed(self):
+    def test_nutrition_not_indexed(self):
         props = PRODUCT_INDEX_MAPPING["mappings"]["properties"]
-        assert props["nutriments"]["enabled"] is False
+        assert props["nutrition"]["enabled"] is False
+

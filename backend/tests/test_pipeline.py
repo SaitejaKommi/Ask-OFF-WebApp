@@ -1,104 +1,75 @@
-import pandas as pd
 from unittest.mock import patch, MagicMock
+import pandas as pd
 
-from pipeline.extract import extract_required_fields
-from pipeline.load import write_normalized_parquet, read_normalized_parquet
-from pipeline.normalizers import normalize_product_name
-from models.product import NormalizedProduct
+from adapters.off_adapter import OFFAdapter
+from models.raw_product import RawProduct
+from models.search_document import SearchDocument, Nutrition, Flags, ProductMetadata
+from pipeline.load import write_normalized_parquet, read_normalized_parquet_with_nutriments
+from pipeline.runner import run_pipeline
 
 
-class TestExtract:
+class TestOFFAdapterExtraction:
     @patch("duckdb.connect")
     @patch("pathlib.Path.exists", return_value=True)
-    def test_extract_reads_required_columns(self, mock_exists, mock_connect):
+    def test_adapter_yields_raw_products(self, mock_exists, mock_connect):
         mock_con = MagicMock()
         mock_connect.return_value = mock_con
 
-        mock_df = pd.DataFrame(
-            {
-                "code": ["001"],
-                "product_name": ["test"],
-                "brands": [""],
-                "categories": [""],
-                "ingredients_text": [""],
-                "nutriments": [""],
-                "nutriscore_grade": [None],
-                "nova_group": [None],
-                "ecoscore_grade": [None],
-                "completeness": ["0.5"],
-            }
-        )
-        mock_con.execute.return_value.fetchdf.return_value = mock_df
+        # Mock duckdb stream fetch chunk
+        mock_con.execute.return_value.fetchmany.side_effect = [
+            [
+                (
+                    "001",
+                    "Test Product",
+                    "Test Brand",
+                    "Test Category",
+                    "Test Ingredients",
+                    "[{'name': 'energy', 'value': 200.0, '100g': 200.0, 'unit': 'kcal'}]",
+                    "a",
+                    1,
+                    "b",
+                    0.95,
+                )
+            ],
+            [],  # Empty to terminate stream
+        ]
 
-        result = extract_required_fields("dummy.csv")
-        assert len(result) == 1
-        assert result.iloc[0]["code"] == "001"
+        adapter = OFFAdapter("dummy.csv")
+        results = list(adapter.extract_raw_products())
 
-    def test_raises_on_missing_file(self):
-        try:
-            extract_required_fields("nonexistent.csv")
-            assert False, "Should have raised"
-        except FileNotFoundError:
-            pass
-
-
-class TestNormalizedProduct:
-    def test_normalized_product_creation(self, sample_raw_product_name):
-        original, cleaned = normalize_product_name(sample_raw_product_name)
-        product = NormalizedProduct(
-            code="0008577002786",
-            product_name=original,
-            product_name_clean=cleaned,
-            brands="Butternut Mountain Farm",
-            brands_clean="Butternut Mountain Farm",
-            categories="Sweeteners",
-            categories_clean="Sweeteners",
-            ingredients_text="Pure organic maple syrup",
-            ingredients_clean="Pure organic maple syrup",
-            nutriments={"energy": {"value": 333.0}},
-            nutriscore_grade="e",
-            nova_group=2,
-            ecoscore_grade="b",
-            completeness=0.6625,
-            search_text=(
-                "Organic Vermont Maple Syrup Butternut Mountain Farm "
-                "Sweeteners Pure organic maple syrup"
-            ),
-            semantic_document="Product: Organic Vermont Maple Syrup",
-        )
-        assert product.code == "0008577002786"
-        assert product.product_name_clean == "Organic Vermont Maple Syrup"
-
-    def test_normalized_product_defaults(self):
-        product = NormalizedProduct(
-            code="001",
-            product_name="",
-            product_name_clean="",
-            brands="",
-            brands_clean="",
-            categories="",
-            categories_clean="",
-            ingredients_text="",
-            ingredients_clean="",
-            nutriments={},
-            search_text="",
-            semantic_document="",
-        )
-        assert product.completeness == 0.0
-        assert product.nutriscore_grade is None
-        assert product.nova_group is None
+        assert len(results) == 1
+        raw_prod = results[0]
+        assert isinstance(raw_prod, RawProduct)
+        assert raw_prod.code == "001"
+        assert raw_prod.product_name == "Test Product"
+        assert raw_prod.nutriments["energy"]["value"] == 200.0
 
 
-class TestLoad:
-    def test_write_and_read_roundtrip(self, tmp_path, sample_normalized_product):
+class TestPipelineParquetLoad:
+    def test_parquet_roundtrip_with_submodels(self, tmp_path):
         from config.settings import settings
 
         settings.processed_dir = tmp_path
 
-        products = [NormalizedProduct(**sample_normalized_product)]
-        output_path = write_normalized_parquet(products)
+        doc = SearchDocument(
+            id="0008577002786",
+            product_name="Organic Vermont Maple Syrup",
+            brand="Butternut Mountain Farm",
+            category="Sweeteners",
+            ingredients="Pure organic maple syrup",
+            nutrition=Nutrition(),
+            flags=Flags(is_organic=True),
+            metadata=ProductMetadata(completeness=0.6625),
+            search_text="text",
+            semantic_document="sem",
+        )
+
+        output_path = write_normalized_parquet([doc])
         assert output_path.exists()
 
-        df = read_normalized_parquet()
+        df = read_normalized_parquet_with_nutriments()
         assert len(df) == 1
-        assert df.iloc[0]["code"] == "0008577002786"
+        assert df.iloc[0]["id"] == "0008577002786"
+        # Verify submodel values are restored
+        assert df.iloc[0]["flags"]["is_organic"] is True
+        assert df.iloc[0]["metadata"]["completeness"] == 0.6625
