@@ -44,15 +44,17 @@ def delete_index(client: OpenSearch) -> None:
         logger.info("Deleted index '%s'", index_name)
 
 
-def index_products(products: list[dict]) -> int:
+from models.search_document import SearchDocument
+
+def index_products(products: list[SearchDocument]) -> int:
     client = get_client()
     ensure_index(client)
 
     actions = [
         {
             "_index": settings.opensearch_index,
-            "_id": p["code"],
-            "_source": _sanitize(p),
+            "_id": p.id,
+            "_source": _sanitize(p.model_dump()),
         }
         for p in products
     ]

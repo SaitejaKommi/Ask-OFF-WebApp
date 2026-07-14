@@ -21,29 +21,39 @@ PRODUCT_INDEX_MAPPING = {
     },
     "mappings": {
         "properties": {
-            "code": {"type": "keyword"},
-            "product_name": {"type": "text", "analyzer": "standard"},
-            "product_name_clean": {
+            "id": {"type": "keyword"},
+            "core_product_id": {"type": "keyword"},
+            "variant_id": {"type": "keyword"},
+            "product_name": {
                 "type": "text",
                 "analyzer": "standard",
                 "fields": {
                     "autocomplete": {
                         "type": "text",
                         "analyzer": "autocomplete_analyzer",
+                        "search_analyzer": "standard",
                     }
                 },
             },
-            "brands": {"type": "text", "analyzer": "standard"},
-            "brands_clean": {"type": "text", "analyzer": "standard"},
-            "categories": {"type": "text", "analyzer": "standard"},
-            "categories_clean": {"type": "text", "analyzer": "standard"},
-            "ingredients_text": {"type": "text", "analyzer": "standard"},
-            "ingredients_clean": {"type": "text", "analyzer": "standard"},
-            "nutriments": {"type": "object", "enabled": False},
-            "nutriscore_grade": {"type": "keyword"},
-            "nova_group": {"type": "integer"},
-            "ecoscore_grade": {"type": "keyword"},
-            "completeness": {"type": "float"},
+            "brand": {"type": "text", "analyzer": "standard"},
+            "category": {"type": "text", "analyzer": "standard"},
+            "ingredients": {"type": "text", "analyzer": "standard"},
+            "nutrition": {"type": "object", "enabled": False},
+            "flags": {
+                "properties": {
+                    "is_organic": {"type": "boolean"},
+                    "is_vegan": {"type": "boolean"},
+                    "is_vegetarian": {"type": "boolean"},
+                }
+            },
+            "metadata": {
+                "properties": {
+                    "nutriscore_grade": {"type": "keyword"},
+                    "nova_group": {"type": "integer"},
+                    "ecoscore_grade": {"type": "keyword"},
+                    "completeness": {"type": "float"},
+                }
+            },
             "search_text": {
                 "type": "text",
                 "analyzer": "standard",
@@ -51,6 +61,7 @@ PRODUCT_INDEX_MAPPING = {
                     "autocomplete": {
                         "type": "text",
                         "analyzer": "autocomplete_analyzer",
+                        "search_analyzer": "standard",
                     }
                 },
             },
@@ -58,3 +69,4 @@ PRODUCT_INDEX_MAPPING = {
         }
     },
 }
+
