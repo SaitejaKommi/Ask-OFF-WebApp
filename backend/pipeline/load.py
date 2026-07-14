@@ -1,16 +1,18 @@
 import json
 import pandas as pd
 from pathlib import Path
-from models.product import NormalizedProduct
+from models.search_document import SearchDocument
 from config.settings import settings
 
 
-def write_normalized_parquet(products: list[NormalizedProduct]) -> Path:
+def write_normalized_parquet(products: list[SearchDocument]) -> Path:
     records = [p.model_dump() for p in products]
     df = pd.DataFrame(records)
-    df["nutriments"] = df["nutriments"].apply(
-        lambda x: json.dumps(x) if isinstance(x, dict) else x
-    )
+    for col in ["nutrition", "flags", "metadata"]:
+        if col in df.columns:
+            df[col] = df[col].apply(
+                lambda x: json.dumps(x) if isinstance(x, dict) else x
+            )
     settings.processed_dir.mkdir(parents=True, exist_ok=True)
     output_path = settings.processed_dir / "normalized.parquet"
     df.to_parquet(output_path, index=False, engine="pyarrow")
@@ -27,7 +29,10 @@ def read_normalized_parquet() -> pd.DataFrame:
 
 def read_normalized_parquet_with_nutriments() -> pd.DataFrame:
     df = read_normalized_parquet()
-    df["nutriments"] = df["nutriments"].apply(
-        lambda x: json.loads(x) if isinstance(x, str) else x
-    )
+    for col in ["nutrition", "flags", "metadata"]:
+        if col in df.columns:
+            df[col] = df[col].apply(
+                lambda x: json.loads(x) if isinstance(x, str) else x
+            )
     return df
+
