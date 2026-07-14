@@ -1,0 +1,31 @@
+from abc import ABC, abstractmethod
+from typing import Optional, Tuple, List
+from models.search_document import SearchDocument
+
+class SearchRepository(ABC):
+    @abstractmethod
+    def search(
+        self, 
+        query: str, 
+        filters: Optional[dict] = None, 
+        size: int = 20, 
+        from_: int = 0
+    ) -> Tuple[int, List[Tuple[float, SearchDocument]]]:
+        """
+        Runs search and returns total count and list of (score, SearchDocument).
+        """
+        pass
+    
+    @abstractmethod
+    def get_by_id(self, doc_id: str) -> Optional[SearchDocument]:
+        """
+        Retrieves a document by its ID.
+        """
+        pass
+
+    @abstractmethod
+    def get_autocomplete(self, query: str, size: int = 5) -> List[str]:
+        """
+        Runs autocomplete prefix search and returns suggestion strings.
+        """
+        pass
