@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -8,6 +9,9 @@ class Settings(BaseSettings):
     opensearch_hosts: list[str] = ["localhost:9200"]
     opensearch_index: str = "askoff_products"
     opensearch_use_ssl: bool = False
+    opensearch_username: Optional[str] = None
+    opensearch_password: Optional[str] = None
+    opensearch_verify_certs: bool = False
 
     raw_data_path: Path = Path("data/raw/open_food_facts_canada_all_columns.csv")
     processed_dir: Path = Path("data/processed")
@@ -17,6 +21,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     pipeline_batch_size: int = 5000
+    completeness_weight: float = 0.15
 
 
 settings = Settings()
