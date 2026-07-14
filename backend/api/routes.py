@@ -1,15 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional, List
 
-from models.search import SearchResponse, ProductResponse
-from services.search_service import SearchService
-from .dependencies import get_search_service
+from models.search import SearchResponse
+from models.search_document import SearchDocument
+from retrieval.search_engine import SearchEngine
+from .dependencies import get_search_engine
 
 router = APIRouter()
 
 
 @router.get("/")
 async def root():
-    return {"status": "ok", "service": "AskOFF Search API", "version": "0.1.0"}
+    return {
+        "status": "ok",
+        "service": "AskOFF Search API V2 (Search Platform)",
+        "version": "0.2.0",
+    }
 
 
 @router.get("/search", response_model=SearchResponse)
@@ -17,35 +23,117 @@ async def search(
     q: str = Query(..., min_length=1),
     size: int = Query(20, ge=1, le=100),
     from_: int = Query(0, ge=0, alias="from"),
-    service: SearchService = Depends(get_search_service),
+    is_organic: Optional[bool] = Query(None),
+    is_vegan: Optional[bool] = Query(None),
+    is_vegetarian: Optional[bool] = Query(None),
+    engine: SearchEngine = Depends(get_search_engine),
 ):
-    return service.search(q, size=size, from_=from_)
+    return engine.search(
+        query=q,
+        size=size,
+        from_=from_,
+        is_organic=is_organic,
+        is_vegan=is_vegan,
+        is_vegetarian=is_vegetarian,
+    )
 
 
-@router.get("/products/{barcode}", response_model=ProductResponse)
+@router.get("/product/{id}", response_model=SearchDocument)
 async def get_product(
-    barcode: str,
-    service: SearchService = Depends(get_search_service),
+    id: str,
+    engine: SearchEngine = Depends(get_search_engine),
 ):
-    product = service.get_product(barcode)
+    product = engine.get_product(id)
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 
-@router.get("/brands/{brand}", response_model=SearchResponse)
+@router.get("/brand/{brand}", response_model=SearchResponse)
 async def search_brand(
     brand: str,
     size: int = Query(20, ge=1, le=100),
-    service: SearchService = Depends(get_search_service),
+    engine: SearchEngine = Depends(get_search_engine),
 ):
-    return service.search_by_brand(brand, size=size)
+    return engine.search(query="", brand=brand, size=size)
 
 
-@router.get("/categories/{category}", response_model=SearchResponse)
+@router.get("/category/{category}", response_model=SearchResponse)
 async def search_category(
     category: str,
     size: int = Query(20, ge=1, le=100),
-    service: SearchService = Depends(get_search_service),
+    engine: SearchEngine = Depends(get_search_engine),
 ):
-    return service.search_by_category(category, size=size)
+    return engine.search(query="", category=category, size=size)
+
+
+@router.get("/ingredient/{ingredient}", response_model=SearchResponse)
+async def search_ingredient(
+    ingredient: str,
+    size: int = Query(20, ge=1, le=100),
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    return engine.search(query="", ingredients=ingredient, size=size)
+
+
+@router.get("/autocomplete")
+async def autocomplete(
+    q: str = Query(..., min_length=1),
+    size: int = Query(5, ge=1, le=20),
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    return engine.autocomplete(query=q, size=size)
+
+
+@router.get("/suggestions")
+async def suggestions(
+    q: str = Query(..., min_length=1),
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    completions = engine.autocomplete(query=q, size=5)
+    return {"suggestions": completions}
+
+
+@router.get("/compare")
+async def compare(
+    ids: List[str] = Query(..., min_length=1),
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    results = []
+    for doc_id in ids:
+        doc = engine.get_product(doc_id)
+        if doc:
+            results.append(doc)
+    return results
+
+
+# ==========================================
+# Legacy Aliases for Backwards Compatibility
+# ==========================================
+
+
+@router.get("/products/{barcode}", response_model=SearchDocument)
+async def legacy_get_product(
+    barcode: str,
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    return await get_product(id=barcode, engine=engine)
+
+
+@router.get("/brands/{brand}", response_model=SearchResponse)
+async def legacy_search_brand(
+    brand: str,
+    size: int = Query(20, ge=1, le=100),
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    return await search_brand(brand=brand, size=size, engine=engine)
+
+
+@router.get("/categories/{category}", response_model=SearchResponse)
+async def legacy_search_category(
+    category: str,
+    size: int = Query(20, ge=1, le=100),
+    engine: SearchEngine = Depends(get_search_engine),
+):
+    return await search_category(category=category, size=size, engine=engine)
+
