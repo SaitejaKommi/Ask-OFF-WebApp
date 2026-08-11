@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from api.app import create_app
 from api.dependencies import get_search_engine
 from models.search import SearchResponse, SearchHit
-from models.search_document import SearchDocument, Nutrition, NutritionItem, Flags, ProductMetadata
+from models.search_document import SearchDocument
 
 
 @pytest.fixture
@@ -42,11 +42,12 @@ def sample_normalized_product() -> dict:
         "brand": "Butternut Mountain Farm",
         "category": "Sweeteners,Syrups",
         "ingredients": "Pure organic maple syrup",
-        "nutrition": {
-            "energy": {"value": 333.0, "per_100g": 1393.0, "unit": "kcal"},
-            "raw_nutrients": {},
+        "attributes": {
+            "nutrition": {
+                "energy": {"value": 333.0, "per_100g": 1393.0, "unit": "kcal"},
+            },
+            "flags": {"is_organic": True, "is_vegan": False, "is_vegetarian": False},
         },
-        "flags": {"is_organic": True, "is_vegan": False, "is_vegetarian": False},
         "metadata": {
             "nutriscore_grade": "e",
             "nova_group": 2,
@@ -75,16 +76,22 @@ def mock_search_engine() -> MagicMock:
         brand="Butternut Mountain Farm",
         category="Sweeteners,Syrups",
         ingredients="Pure organic maple syrup",
-        nutrition=Nutrition(
-            energy=NutritionItem(value=333.0, per_100g=1393.0, unit="kcal")
-        ) if "NutritionItem" in globals() else Nutrition(),
-        flags=Flags(),
-        metadata=ProductMetadata(
-            nutriscore_grade="e",
-            nova_group=2,
-            ecoscore_grade="b",
-            completeness=0.6625,
-        ),
+        attributes={
+            "nutrition": {
+                "energy": {"value": 333.0, "per_100g": 1393.0, "unit": "kcal"}
+            },
+            "flags": {
+                "is_organic": True,
+                "is_vegan": False,
+                "is_vegetarian": False
+            }
+        },
+        metadata={
+            "nutriscore_grade": "e",
+            "nova_group": 2,
+            "ecoscore_grade": "b",
+            "completeness": 0.6625,
+        },
         search_text=(
             "Organic Vermont Maple Syrup Butternut Mountain Farm "
             "Sweeteners,Syrups Pure organic maple syrup"

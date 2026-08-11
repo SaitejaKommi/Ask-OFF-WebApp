@@ -59,21 +59,20 @@ class TestSearchDocumentBuilder:
         assert doc.category == "Breakfast cereals, Granola"
         assert doc.ingredients == "Organic rolled oats, organic sugar, almonds, vegan cocoa"
 
-        # Nutrition Pydantic model
-        assert doc.nutrition.energy is not None
-        assert doc.nutrition.energy.value == 450.0
-        assert doc.nutrition.fat.value == 15.0
-        assert doc.nutrition.saturates is None
+        # Nutrition dict
+        assert doc.attributes["nutrition"]["energy"]["value"] == 450.0
+        assert doc.attributes["nutrition"]["fat"]["value"] == 15.0
+        assert "saturates" not in doc.attributes["nutrition"]
 
         # Flags auto-derived by builder
-        assert doc.flags.is_organic is True
-        assert doc.flags.is_vegan is True
-        assert doc.flags.is_vegetarian is True
+        assert doc.attributes["flags"]["is_organic"] is True
+        assert doc.attributes["flags"]["is_vegan"] is True
+        assert doc.attributes["flags"]["is_vegetarian"] is True
 
-        # Metadata model
-        assert doc.metadata.nutriscore_grade == "a"
-        assert doc.metadata.nova_group == 3
-        assert doc.metadata.completeness == 0.88
+        # Metadata map
+        assert doc.metadata["nutriscore_grade"] == "a"
+        assert doc.metadata["nova_group"] == 3
+        assert doc.metadata["completeness"] == 0.88
 
         # Text concatenation
         assert "Bio Organic Granola" in doc.search_text

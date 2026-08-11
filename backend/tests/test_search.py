@@ -20,8 +20,7 @@ class TestOpenSearchSearchRepository:
                             "brand": "Bee",
                             "category": "Sweeteners",
                             "ingredients": "Honey",
-                            "nutrition": {},
-                            "flags": {},
+                            "attributes": {},
                             "metadata": {"completeness": 1.0},
                             "search_text": "honey",
                             "semantic_document": "honey",
@@ -32,7 +31,7 @@ class TestOpenSearchSearchRepository:
         }
 
         repo = OpenSearchSearchRepository(client=mock_client)
-        total, hits = repo.search(
+        total, hits, _ = repo.search(
             query="honey",
             filters={"brand": "Bee"},
             size=10,
@@ -55,6 +54,23 @@ class TestOpenSearchSearchRepository:
         must_clause = body_passed["query"]["function_score"]["query"]["bool"]["must"]
         assert must_clause[0]["match"]["brand"]["query"] == "Bee"
 
+    def test_search_enforces_minimum_should_match_with_filters(self):
+        mock_client = MagicMock()
+        mock_client.search.return_value = {"hits": {"total": {"value": 0}, "hits": []}}
+        repo = OpenSearchSearchRepository(client=mock_client)
+        
+        repo.search(query="honey", filters={"is_organic": True})
+        
+        body_passed = mock_client.search.call_args[1]["body"]
+        bool_query = body_passed["query"]["function_score"]["query"]["bool"]
+        
+        # Should have a should clause (for text search)
+        assert len(bool_query["should"]) == 1
+        # Should have a must clause (for organic filter)
+        assert len(bool_query["must"]) == 1
+        # Crucial bugfix: minimum_should_match MUST be 1 so the text search is mandatory
+        assert bool_query["minimum_should_match"] == 1
+
 
 class TestMappingStructure:
     def test_has_required_fields(self):
@@ -67,8 +83,7 @@ class TestMappingStructure:
             "brand",
             "category",
             "ingredients",
-            "nutrition",
-            "flags",
+            "attributes",
             "metadata",
             "search_text",
             "semantic_document",
@@ -76,7 +91,7 @@ class TestMappingStructure:
         for field in required:
             assert field in props, f"Missing field: {field}"
 
-    def test_nutrition_not_indexed(self):
+    def test_attributes_indexed_dynamically(self):
         props = PRODUCT_INDEX_MAPPING["mappings"]["properties"]
-        assert props["nutrition"]["enabled"] is False
+        assert props["attributes"]["dynamic"] is True
 
