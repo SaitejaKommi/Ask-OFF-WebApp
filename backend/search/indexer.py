@@ -44,9 +44,10 @@ def delete_index(client: OpenSearch) -> None:
         logger.info("Deleted index '%s'", index_name)
 
 
+import time
 from models.search_document import SearchDocument
 
-def index_products(products: list[SearchDocument]) -> int:
+def index_products(products: list[SearchDocument], max_retries: int = 3) -> int:
     client = get_client()
     ensure_index(client)
 
@@ -59,16 +60,36 @@ def index_products(products: list[SearchDocument]) -> int:
         for p in products
     ]
 
-    success, errors = helpers.bulk(
-        client,
-        actions,
-        raise_on_error=False,
-    )
-    if errors:
-        logger.error("Indexing errors (showing first 5): %s", errors[:5])
-        for err in errors[:5]:
-            detail = err.get("index", {}).get("error", {})
-            logger.error("  Reason: %s", detail.get("reason", "unknown"))
-
-    logger.info("Indexed %d products (%d errors)", success, len(errors))
-    return success
+    for attempt in range(max_retries):
+        try:
+            success, errors = helpers.bulk(
+                client,
+                actions,
+                raise_on_error=False,
+                chunk_size=settings.pipeline_batch_size,
+            )
+            if errors:
+                logger.error("Indexing errors (showing first 5): %s", errors[:5])
+                for err in errors[:5]:
+                    detail = err.get("index", {}).get("error", {})
+                    logger.error("  Reason: %s", detail.get("reason", "unknown"))
+                
+                failed_path = settings.processed_dir / "failed_documents.jsonl"
+                settings.processed_dir.mkdir(parents=True, exist_ok=True)
+                with open(failed_path, "a", encoding="utf-8") as f:
+                    for err in errors:
+                        doc_id = err.get("index", {}).get("_id")
+                        if doc_id:
+                            f.write(json.dumps({"_id": doc_id, "error": err.get("index", {}).get("error")}) + "\n")
+            
+            logger.info("Indexed %d products (%d errors)", success, len(errors))
+            return success
+            
+        except Exception as e:
+            logger.warning("Bulk indexing failed (attempt %d/%d): %s", attempt + 1, max_retries, e)
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+            else:
+                logger.error("Failed to index batch after %d attempts", max_retries)
+                raise
+    return 0
