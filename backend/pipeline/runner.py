@@ -5,9 +5,10 @@ from typing import Optional, Type
 from adapters.base import BaseAdapter
 from adapters.off_adapter import OFFAdapter
 from builders.search_document_builder import SearchDocumentBuilder
-from pipeline.load import write_normalized_parquet
+from pipeline.load import write_normalized_parquet_batch
 from search.indexer import index_products
 from models.search_document import SearchDocument
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,26 +24,31 @@ def run_pipeline(
     adapter = adapter_class(csv_path) if adapter_class == OFFAdapter else adapter_class()
 
     logger.info("Streaming and transforming raw products...")
-    search_docs: list[SearchDocument] = []
     batch: list[SearchDocument] = []
     total_indexed = 0
+    writer = None
+    output_path = settings.processed_dir / "normalized.parquet"
 
     for raw_product in adapter.extract_raw_products(limit=limit):
         doc = builder.build(raw_product)
-        search_docs.append(doc)
 
-        if index_to_opensearch:
-            batch.append(doc)
-            if len(batch) >= 1000:
+        batch.append(doc)
+        if len(batch) >= settings.pipeline_batch_size:
+            if index_to_opensearch:
                 total_indexed += index_products(batch)
-                batch = []
+            output_path, writer = write_normalized_parquet_batch(batch, writer)
+            batch = []
 
-    if index_to_opensearch and batch:
-        total_indexed += index_products(batch)
+    if batch:
+        if index_to_opensearch:
+            total_indexed += index_products(batch)
+        output_path, writer = write_normalized_parquet_batch(batch, writer)
+
+    if writer is not None:
+        writer.close()
 
     logger.info("Indexed %d search documents to OpenSearch", total_indexed)
 
-    output_path = write_normalized_parquet(search_docs)
     logger.info("Pipeline complete. Output: %s", output_path)
     return output_path
 

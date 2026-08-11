@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
-    pipeline_batch_size: int = 5000
+    pipeline_batch_size: int = 1000
+    
+    cors_origins: list[str] = ["*"]
     completeness_weight: float = 0.15
 
 
