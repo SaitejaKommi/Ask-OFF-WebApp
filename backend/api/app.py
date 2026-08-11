@@ -8,16 +8,25 @@ from .routes import router
 from config.settings import settings
 
 
+from contextlib import asynccontextmanager
+
 def create_app() -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        from query.dictionaries import load_dynamic_dictionaries
+        load_dynamic_dictionaries()
+        yield
+
     app = FastAPI(
         title="Search Platform API",
         version="0.2.0",
         description="Search and retrieval API for search products",
+        lifespan=lifespan,
     )
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
