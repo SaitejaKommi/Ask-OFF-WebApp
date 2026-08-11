@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from models.search_document import SearchDocument
 
 
@@ -13,4 +13,4 @@ class SearchResponse(BaseModel):
     hits: List[SearchHit]
     query: str
     took_ms: int
-
+    search_query: Optional[dict] = None
