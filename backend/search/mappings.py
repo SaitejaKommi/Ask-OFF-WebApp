@@ -22,6 +22,7 @@ PRODUCT_INDEX_MAPPING = {
     "mappings": {
         "properties": {
             "id": {"type": "keyword"},
+            "dataset_id": {"type": "keyword"},
             "core_product_id": {"type": "keyword"},
             "variant_id": {"type": "keyword"},
             "product_name": {
@@ -35,25 +36,29 @@ PRODUCT_INDEX_MAPPING = {
                     }
                 },
             },
-            "brand": {"type": "text", "analyzer": "standard"},
-            "category": {"type": "text", "analyzer": "standard"},
-            "ingredients": {"type": "text", "analyzer": "standard"},
-            "nutrition": {"type": "object", "enabled": False},
-            "flags": {
-                "properties": {
-                    "is_organic": {"type": "boolean"},
-                    "is_vegan": {"type": "boolean"},
-                    "is_vegetarian": {"type": "boolean"},
+            "brand": {
+                "type": "text", 
+                "analyzer": "standard",
+                "fields": {
+                    "keyword": {"type": "keyword", "ignore_above": 256}
                 }
             },
-            "metadata": {
-                "properties": {
-                    "nutriscore_grade": {"type": "keyword"},
-                    "nova_group": {"type": "integer"},
-                    "ecoscore_grade": {"type": "keyword"},
-                    "completeness": {"type": "float"},
+            "category": {
+                "type": "text", 
+                "analyzer": "standard",
+                "fields": {
+                    "keyword": {"type": "keyword", "ignore_above": 256}
                 }
             },
+            "ingredients": {
+                "type": "text", 
+                "analyzer": "standard",
+                "fields": {
+                    "keyword": {"type": "keyword", "ignore_above": 256}
+                }
+            },
+            "attributes": {"type": "object", "dynamic": True},
+            "metadata": {"type": "object", "dynamic": True},
             "search_text": {
                 "type": "text",
                 "analyzer": "standard",
@@ -69,4 +74,3 @@ PRODUCT_INDEX_MAPPING = {
         }
     },
 }
-

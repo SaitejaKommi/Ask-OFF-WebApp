@@ -3,8 +3,8 @@ import pandas as pd
 
 from adapters.off_adapter import OFFAdapter
 from models.raw_product import RawProduct
-from models.search_document import SearchDocument, Nutrition, Flags, ProductMetadata
-from pipeline.load import write_normalized_parquet, read_normalized_parquet_with_nutriments
+from models.search_document import SearchDocument
+from pipeline.load import write_normalized_parquet_batch, read_normalized_parquet_with_nutriments
 from pipeline.runner import run_pipeline
 
 
@@ -57,19 +57,22 @@ class TestPipelineParquetLoad:
             brand="Butternut Mountain Farm",
             category="Sweeteners",
             ingredients="Pure organic maple syrup",
-            nutrition=Nutrition(),
-            flags=Flags(is_organic=True),
-            metadata=ProductMetadata(completeness=0.6625),
+            attributes={
+                "nutrition": {"energy": {"value": 1.0}},
+                "flags": {"is_organic": True}
+            },
+            metadata={"completeness": 0.6625},
             search_text="text",
             semantic_document="sem",
         )
 
-        output_path = write_normalized_parquet([doc])
+        output_path, writer = write_normalized_parquet_batch([doc])
+        writer.close()
         assert output_path.exists()
 
         df = read_normalized_parquet_with_nutriments()
         assert len(df) == 1
         assert df.iloc[0]["id"] == "0008577002786"
         # Verify submodel values are restored
-        assert df.iloc[0]["flags"]["is_organic"] is True
+        assert df.iloc[0]["attributes"]["flags"]["is_organic"] is True
         assert df.iloc[0]["metadata"]["completeness"] == 0.6625

@@ -9,10 +9,11 @@ class SearchRepository(ABC):
         query: str, 
         filters: Optional[dict] = None, 
         size: int = 20, 
-        from_: int = 0
-    ) -> Tuple[int, List[Tuple[float, SearchDocument]]]:
+        from_: int = 0,
+        explain: bool = False
+    ) -> Tuple[int, List[Tuple[float, SearchDocument]], dict]:
         """
-        Runs search and returns total count and list of (score, SearchDocument).
+        Runs search and returns total count, list of (score, SearchDocument), and metadata dict.
         """
         pass
     

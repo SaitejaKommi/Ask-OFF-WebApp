@@ -17,8 +17,9 @@ class OpenSearchSearchRepository(SearchRepository):
         query: str, 
         filters: Optional[dict] = None, 
         size: int = 20, 
-        from_: int = 0
-    ) -> Tuple[int, List[Tuple[float, SearchDocument]]]:
+        from_: int = 0,
+        explain: bool = False
+    ) -> Tuple[int, List[Tuple[float, SearchDocument]], dict]:
         
         must_clauses = []
         should_clauses = []
@@ -33,12 +34,36 @@ class OpenSearchSearchRepository(SearchRepository):
         
         if query and query != "*":
             should_clauses.append({
-                "multi_match": {
-                    "query": query,
-                    "fields": fields,
-                    "type": "best_fields",
-                    "fuzziness": "AUTO",
-                    "operator": "or",
+                "bool": {
+                    "should": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": fields,
+                                "type": "phrase",
+                                "boost": 10.0
+                            }
+                        },
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": fields,
+                                "operator": "and",
+                                "boost": 5.0
+                            }
+                        },
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": fields,
+                                "type": "best_fields",
+                                "fuzziness": "AUTO",
+                                "operator": "or",
+                                "boost": 1.0
+                            }
+                        }
+                    ],
+                    "minimum_should_match": 1
                 }
             })
         elif query == "*":
@@ -52,6 +77,8 @@ class OpenSearchSearchRepository(SearchRepository):
                     must_clauses.append({"match": {"category": {"query": v, "operator": "and"}}})
                 elif k == "ingredients" and v:
                     must_clauses.append({"match": {"ingredients": {"query": v, "operator": "and"}}})
+                elif k.startswith("is_") and v is not None:
+                    must_clauses.append({"term": {f"attributes.flags.{k}": v}})
         
         if not must_clauses and not should_clauses:
             must_clauses.append({"match_all": {}})
@@ -60,7 +87,7 @@ class OpenSearchSearchRepository(SearchRepository):
             "bool": {
                 "must": must_clauses,
                 "should": should_clauses,
-                "minimum_should_match": 1 if (should_clauses and not must_clauses) else 0
+                "minimum_should_match": 1 if should_clauses else 0
             }
         }
 
@@ -96,7 +123,11 @@ class OpenSearchSearchRepository(SearchRepository):
             doc = SearchDocument(**h["_source"])
             results.append((score, doc))
             
-        return total, results
+        metadata = {}
+        if explain:
+            metadata["opensearch_query"] = query_body
+            
+        return total, results, metadata
 
     def get_by_id(self, doc_id: str) -> Optional[SearchDocument]:
         try:
