@@ -16,8 +16,45 @@ class ConstraintExtractor:
             "lactose_free": None
         }
         
+        numeric_filters = []
+        modifiers = []
+        
         cleaned_query = normalized_query
         explanations = []
+        
+        modifier_patterns = [
+            r"\b(?:fresh|frozen|raw|pure|natural|wild|farmed)\b"
+        ]
+        for pattern in modifier_patterns:
+            for match in re.finditer(pattern, cleaned_query):
+                mod = match.group(0)
+                if mod not in modifiers:
+                    modifiers.append(mod)
+                    explanations.append({"field": "modifiers", "explanation": f"Extracted modifier '{mod}'"})
+        
+        numeric_patterns = [
+            (r"\b(?:under|less than|<|<=)\s*(\d+(?:\.\d+)?)\s*(g|mg|kcal|calories)(?:\s+([a-zA-Z]+))?\b", "lte"),
+            (r"\b(?:at least|more than|>|>=|over)\s*(\d+(?:\.\d+)?)\s*(g|mg|kcal|calories)(?:\s+([a-zA-Z]+))?\b", "gte"),
+        ]
+        for pattern, op in numeric_patterns:
+            # We must use finditer to replace correctly without breaking the loop
+            matches = list(re.finditer(pattern, cleaned_query))
+            for match in matches:
+                val = float(match.group(1))
+                unit = match.group(2)
+                nutrient = match.group(3) if match.group(3) else unit
+                numeric_filters.append({
+                    "nutrient": nutrient,
+                    "operator": op,
+                    "value": val,
+                    "unit": unit,
+                    "comparison_basis": "per_100g"
+                })
+                explanations.append({"field": "numeric", "explanation": f"Numeric constraint: {nutrient} {op} {val}{unit}"})
+                
+                temp = cleaned_query.replace(match.group(0), "").strip()
+                if temp:
+                    cleaned_query = temp
         
         patterns = [
             (r"\b(?:organic|bio)\b", "organic", True, "Matched 'organic' or 'bio' keyword indicating organic certification"),
@@ -38,12 +75,17 @@ class ConstraintExtractor:
             if re.search(pattern, cleaned_query):
                 filters[key] = value
                 explanations.append({"field": key, "explanation": explanation})
-                cleaned_query = re.sub(pattern, "", cleaned_query)
+                
+                temp = re.sub(pattern, "", cleaned_query).strip()
+                if temp:
+                    cleaned_query = temp
         
         cleaned_query = re.sub(r"\s+", " ", cleaned_query).strip()
             
         return {
             "filters": filters,
+            "numeric_filters": numeric_filters,
+            "modifiers": modifiers,
             "explanations": explanations,
             "cleaned_query": cleaned_query
         }

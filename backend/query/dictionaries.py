@@ -19,6 +19,7 @@ NUTRITION = {
     "protein", "sugar", "sodium", "salt", "fat", "carbs", "carbohydrates", "energy", "calories"
 }
 
+
 def load_dynamic_dictionaries():
     logger.info("Dynamically loading entity dictionaries from OpenSearch...")
     try:

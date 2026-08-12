@@ -39,6 +39,8 @@ class SearchQueryPipeline:
             intent=intent,
             entities=entities,
             filters=constraints["filters"],
+            numeric_filters=constraints.get("numeric_filters", []),
+            modifiers=constraints.get("modifiers", []),
             ranking_preferences={},
             pagination={"size": size, "from": from_},
             metadata=metadata
