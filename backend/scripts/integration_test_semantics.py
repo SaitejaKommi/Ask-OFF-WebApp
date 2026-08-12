@@ -117,9 +117,9 @@ def run_tests():
     # Validation
     returned_ids = {h.product.id for h in res.hits}
     if "1" in returned_ids and "4" in returned_ids and "3" not in returned_ids:
-        print("\n✅ SUCCESS: Returned only low sugar peanut butter products without forcing 'sugar' as ingredient.")
+        print("\nSUCCESS: Returned only low sugar peanut butter products without forcing 'sugar' as ingredient.")
     else:
-        print("\n❌ FAILED: Incorrect products returned.")
+        print("\nFAILED: Incorrect products returned.")
         
     print("\nCleaning up...")
     client.indices.delete(index=INDEX_NAME)

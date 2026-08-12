@@ -75,3 +75,32 @@ def test_general_brand_query_does_not_overfilter():
     assert "kirkland" in sq.text_term
     # In SearchEngine, because intent is generic_search, it will NOT become a MUST filter,
     # but the pipeline should still extract it as an entity.
+
+def test_numeric_constraint_extraction():
+    sq = SearchQueryPipeline.process("snacks under 200 calories")
+    assert "snacks" in sq.text_term
+    assert "under 200" not in sq.text_term
+    
+    assert len(sq.numeric_filters) == 1
+    nf = sq.numeric_filters[0]
+    assert nf["nutrient"] == "calories"
+    assert nf["operator"] == "lte"
+    assert nf["value"] == 200.0
+    assert nf["unit"] == "calories"
+    assert nf["comparison_basis"] == "per_100g"
+
+def test_modifier_extraction():
+    sq = SearchQueryPipeline.process("fresh organic milk")
+    assert sq.filters.get("organic") is True
+    assert "fresh" in sq.modifiers
+    # modifier should remain in text_term to boost phrase match
+    assert "fresh" in sq.text_term
+
+def test_multi_word_phrase_without_compound_protection():
+    sq = SearchQueryPipeline.process("protein bar")
+    assert sq.intent == "generic_search"
+    # Even if "protein" and "bar" are extracted as entities,
+    # the entire text_term should still contain them for exact phrase matching.
+    assert "protein" in sq.text_term
+    assert "bar" in sq.text_term
+
