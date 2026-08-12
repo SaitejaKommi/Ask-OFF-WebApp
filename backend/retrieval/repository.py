@@ -8,6 +8,8 @@ class SearchRepository(ABC):
         self, 
         query: str, 
         filters: Optional[dict] = None, 
+        numeric_filters: Optional[List[dict]] = None,
+        modifiers: Optional[List[str]] = None,
         size: int = 20, 
         from_: int = 0,
         explain: bool = False

@@ -99,13 +99,18 @@ class SearchEngine:
         if search_query.intent in ("brand_search", "category_browse", "ingredient_search"):
             text_term = ""
 
-            
         q_size = search_query.pagination.get("size", size)
         q_from = search_query.pagination.get("from", from_)
+        
+        # Collect additional context for the repository layer
+        numeric_filters = getattr(search_query, "numeric_filters", [])
+        modifiers = getattr(search_query, "modifiers", [])
         
         total, hits, repo_metadata = self.repository.search(
             query=text_term,
             filters=final_filters,
+            numeric_filters=numeric_filters,
+            modifiers=modifiers,
             size=q_size,
             from_=q_from,
             explain=explain

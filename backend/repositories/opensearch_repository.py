@@ -7,6 +7,23 @@ from retrieval.repository import SearchRepository
 from config.settings import settings
 from search.client import get_client
 
+NUTRIENT_FIELD_MAP = {
+    "protein": "proteins",
+    "proteins": "proteins",
+    "sugar": "sugars",
+    "sugars": "sugars",
+    "fat": "fat",
+    "calories": "energy-kcal",
+    "kcal": "energy-kcal",
+    "energy": "energy-kcal",
+    "sodium": "sodium",
+    "salt": "salt",
+    "carbs": "carbohydrates",
+    "carbohydrates": "carbohydrates",
+    "fiber": "fiber",
+    "saturated fat": "saturated-fat",
+}
+
 class OpenSearchSearchRepository(SearchRepository):
     def __init__(self, client: Optional[OpenSearch] = None) -> None:
         self.client = client or get_client()
@@ -16,6 +33,8 @@ class OpenSearchSearchRepository(SearchRepository):
         self, 
         query: str, 
         filters: Optional[dict] = None, 
+        numeric_filters: Optional[List[dict]] = None,
+        modifiers: Optional[List[str]] = None,
         size: int = 20, 
         from_: int = 0,
         explain: bool = False
@@ -23,6 +42,7 @@ class OpenSearchSearchRepository(SearchRepository):
         
         must_clauses = []
         should_clauses = []
+        must_not_clauses = []
         
         fields = [
             "product_name^3.0",
@@ -59,7 +79,7 @@ class OpenSearchSearchRepository(SearchRepository):
                                 "type": "best_fields",
                                 "fuzziness": "AUTO",
                                 "operator": "or",
-                                "boost": 1.0
+                                "boost": 0.5
                             }
                         }
                     ],
@@ -68,6 +88,18 @@ class OpenSearchSearchRepository(SearchRepository):
             })
         elif query == "*":
             must_clauses.append({"match_all": {}})
+            
+        if modifiers:
+            # Boost for modifiers like fresh, frozen, raw
+            for mod in modifiers:
+                should_clauses.append({
+                    "match": {
+                        "product_name": {
+                            "query": mod,
+                            "boost": 2.0
+                        }
+                    }
+                })
         
         if filters:
             for k, v in filters.items():
@@ -77,8 +109,36 @@ class OpenSearchSearchRepository(SearchRepository):
                     must_clauses.append({"match": {"category": {"query": v, "operator": "and"}}})
                 elif k == "ingredients" and v:
                     must_clauses.append({"match": {"ingredients": {"query": v, "operator": "and"}}})
+                elif k == "is_palm_oil_free":
+                    if v is True:
+                        # Robust negation for palm oil
+                        should_clauses.append({"term": {"attributes.flags.is_palm_oil_free": {"value": True, "boost": 2.0}}})
+                        must_not_clauses.append({"match": {"ingredients": "palm oil"}})
+                    elif v is False:
+                        # Must contain palm oil
+                        must_clauses.append({"match": {"ingredients": "palm oil"}})
                 elif k.startswith("is_") and v is not None:
+                    # For other boolean constraints, we keep them as must for now, 
+                    # but they could also be softened.
                     must_clauses.append({"term": {f"attributes.flags.{k}": v}})
+                    
+        if numeric_filters:
+            for nf in numeric_filters:
+                nutrient = nf.get("nutrient")
+                op = nf.get("operator")
+                val = nf.get("value")
+                basis = nf.get("comparison_basis", "per_100g")
+                
+                mapped_nutrient = NUTRIENT_FIELD_MAP.get(nutrient, nutrient)
+                
+                field_path = f"attributes.nutrition.{mapped_nutrient}.{basis}"
+                must_clauses.append({
+                    "range": {
+                        field_path: {
+                            op: val
+                        }
+                    }
+                })
         
         if not must_clauses and not should_clauses:
             must_clauses.append({"match_all": {}})
@@ -87,7 +147,8 @@ class OpenSearchSearchRepository(SearchRepository):
             "bool": {
                 "must": must_clauses,
                 "should": should_clauses,
-                "minimum_should_match": 1 if should_clauses else 0
+                "must_not": must_not_clauses,
+                "minimum_should_match": 1 if (query and query != "*") else 0
             }
         }
 
