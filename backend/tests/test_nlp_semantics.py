@@ -104,3 +104,28 @@ def test_multi_word_phrase_without_compound_protection():
     assert "protein" in sq.text_term
     assert "bar" in sq.text_term
 
+def test_recipe_quantity_extraction_blueberries():
+    sq = SearchQueryPipeline.process("500 mL (2 cups) frozen blueberries")
+    assert sq.text_term == "frozen blueberries"
+    assert "frozen" in sq.modifiers
+    assert len(sq.recipe_quantities) == 2
+    assert sq.recipe_quantities[0]["value"] == 500.0
+    assert sq.recipe_quantities[0]["unit"] == "ml"
+    assert sq.recipe_quantities[1]["value"] == 2.0
+    assert sq.recipe_quantities[1]["unit"] == "cups"
+
+def test_recipe_quantity_extraction_butter():
+    sq = SearchQueryPipeline.process("2 tbsp salted butter")
+    assert sq.text_term == "salted butter"
+    assert "salted" in sq.modifiers
+    assert len(sq.recipe_quantities) == 1
+    assert sq.recipe_quantities[0]["value"] == 2.0
+    assert sq.recipe_quantities[0]["unit"] == "tbsp"
+
+def test_food_with_number_is_preserved():
+    sq = SearchQueryPipeline.process("2% milk")
+    assert "milk" in sq.text_term
+    assert "2" in sq.text_term
+    assert len(sq.recipe_quantities) == 0
+
+

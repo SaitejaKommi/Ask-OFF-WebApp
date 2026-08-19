@@ -4,6 +4,7 @@ from opensearchpy.exceptions import NotFoundError
 
 from models.search_document import SearchDocument
 from retrieval.repository import SearchRepository
+from retrieval.ranking import RankingManager
 from config.settings import settings
 from search.client import get_client
 
@@ -25,9 +26,10 @@ NUTRIENT_FIELD_MAP = {
 }
 
 class OpenSearchSearchRepository(SearchRepository):
-    def __init__(self, client: Optional[OpenSearch] = None) -> None:
+    def __init__(self, client: Optional[OpenSearch] = None, ranking_manager: Optional[RankingManager] = None) -> None:
         self.client = client or get_client()
         self.index = settings.opensearch_index
+        self.ranking_manager = ranking_manager or RankingManager()
 
     def search(
         self, 
@@ -44,13 +46,7 @@ class OpenSearchSearchRepository(SearchRepository):
         should_clauses = []
         must_not_clauses = []
         
-        fields = [
-            "product_name^3.0",
-            "brand^2.0",
-            "category^1.5",
-            "ingredients^1.2",
-            "search_text^1.0"
-        ]
+        fields = self.ranking_manager.get_search_fields()
         
         if query and query != "*":
             should_clauses.append({
@@ -61,7 +57,7 @@ class OpenSearchSearchRepository(SearchRepository):
                                 "query": query,
                                 "fields": fields,
                                 "type": "phrase",
-                                "boost": 10.0
+                                "boost": self.ranking_manager.phrase_boost
                             }
                         },
                         {
@@ -69,7 +65,7 @@ class OpenSearchSearchRepository(SearchRepository):
                                 "query": query,
                                 "fields": fields,
                                 "operator": "and",
-                                "boost": 5.0
+                                "boost": self.ranking_manager.and_match_boost
                             }
                         },
                         {
@@ -79,7 +75,7 @@ class OpenSearchSearchRepository(SearchRepository):
                                 "type": "best_fields",
                                 "fuzziness": "AUTO",
                                 "operator": "or",
-                                "boost": 0.5
+                                "boost": self.ranking_manager.fuzzy_boost
                             }
                         }
                     ],
@@ -90,13 +86,13 @@ class OpenSearchSearchRepository(SearchRepository):
             must_clauses.append({"match_all": {}})
             
         if modifiers:
-            # Boost for modifiers like fresh, frozen, raw
+            # Boost for modifiers like fresh, frozen, raw, salted
             for mod in modifiers:
                 should_clauses.append({
                     "match": {
                         "product_name": {
                             "query": mod,
-                            "boost": 2.0
+                            "boost": self.ranking_manager.modifier_boost
                         }
                     }
                 })
@@ -163,7 +159,7 @@ class OpenSearchSearchRepository(SearchRepository):
                         {
                             "field_value_factor": {
                                 "field": "metadata.completeness",
-                                "factor": 0.15,
+                                "factor": self.ranking_manager.completeness_factor,
                                 "missing": 0.0
                             }
                         }

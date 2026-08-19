@@ -1,0 +1,261 @@
+[
+  {
+    "query": "Compliments peanut butter",
+    "type": "brand_product",
+    "description": "Compliments branded peanut butter",
+    "relevant_brand": "compliments",
+    "relevant_keywords": ["peanut", "butter"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "Compliments strawberry cereal bars",
+    "type": "brand_product",
+    "description": "Compliments strawberry cereal bars",
+    "relevant_brand": "compliments",
+    "relevant_keywords": ["strawberry", "cereal", "bar"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "Compliments cottage cheese",
+    "type": "brand_product",
+    "description": "Compliments cottage cheese",
+    "relevant_brand": "compliments",
+    "relevant_keywords": ["cottage", "cheese"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "Compliments soy sauce",
+    "type": "brand_product",
+    "description": "Compliments soy sauce",
+    "relevant_brand": "compliments",
+    "relevant_keywords": ["soya", "soy", "sauce"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "500 mL (2 cups) frozen blueberries",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with volume & cups",
+    "relevant_keywords": ["frozen", "blueberr"],
+    "disallowed_keywords": ["jam", "juice", "yogurt", "syrup", "pie"]
+  },
+  {
+    "query": "2 tbsp salted butter",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with tablespoon & modifier",
+    "relevant_keywords": ["salted", "butter"],
+    "disallowed_keywords": ["peanut", "almond", "cookie", "popcorn"]
+  },
+  {
+    "query": "1 cup rolled oats",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with cup & oats",
+    "relevant_keywords": ["oat", "rolled"],
+    "disallowed_keywords": ["soap", "lotion", "bar"]
+  },
+  {
+    "query": "250g fresh tomatoes",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with weight in grams",
+    "relevant_keywords": ["tomato"],
+    "disallowed_keywords": ["soup", "paste", "ketchup"]
+  },
+  {
+    "query": "frozen blueberries",
+    "type": "product_modifier",
+    "description": "Frozen blueberries search",
+    "relevant_keywords": ["frozen", "blueberr"],
+    "disallowed_keywords": ["jam", "juice", "yogurt", "syrup"]
+  },
+  {
+    "query": "peanut butter",
+    "type": "product",
+    "description": "Standard peanut butter search",
+    "relevant_keywords": ["peanut", "butter"],
+    "disallowed_keywords": ["cookie", "candy", "ice cream"]
+  },
+  {
+    "query": "milk",
+    "type": "product",
+    "description": "Dairy or plant milk search",
+    "relevant_keywords": ["milk"],
+    "disallowed_keywords": ["chocolate bar", "cookies"]
+  },
+  {
+    "query": "bread",
+    "type": "product",
+    "description": "Bread loaf search",
+    "relevant_keywords": ["bread"],
+    "disallowed_keywords": ["crumb", "crouton"]
+  },
+  {
+    "query": "butter",
+    "type": "product",
+    "description": "Dairy butter search",
+    "relevant_keywords": ["butter"],
+    "disallowed_keywords": ["peanut", "almond", "body butter"]
+  },
+  {
+    "query": "chips",
+    "type": "product",
+    "description": "Potato or tortilla chips search",
+    "relevant_keywords": ["chip", "crisp"],
+    "disallowed_keywords": ["chocolate chip"]
+  },
+  {
+    "query": "coffee",
+    "type": "product",
+    "description": "Ground or whole bean coffee search",
+    "relevant_keywords": ["coffee", "roast", "espresso"],
+    "disallowed_keywords": ["creamer", "candy", "ice cream"]
+  },
+  {
+    "query": "chocolate cookies",
+    "type": "product",
+    "description": "Chocolate cookies search",
+    "relevant_keywords": ["chocolate", "cookie", "biscuit"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "gluten free bread",
+    "type": "dietary",
+    "description": "Gluten-free bread",
+    "relevant_keywords": ["bread"],
+    "required_flags": {"is_gluten_free": true},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "vegan cookies",
+    "type": "dietary",
+    "description": "Vegan certified cookies",
+    "relevant_keywords": ["cookie", "biscuit"],
+    "required_flags": {"is_vegan": true},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "organic maple syrup",
+    "type": "dietary",
+    "description": "Organic maple syrup",
+    "relevant_keywords": ["maple", "syrup"],
+    "required_flags": {"is_organic": true},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "palm oil free peanut butter",
+    "type": "dietary",
+    "description": "Palm oil free peanut butter",
+    "relevant_keywords": ["peanut", "butter"],
+    "required_flags": {"is_palm_oil_free": true},
+    "disallowed_keywords": ["palm oil"]
+  },
+  {
+    "query": "low sugar cereal",
+    "type": "nutrition",
+    "description": "Low sugar breakfast cereal",
+    "relevant_keywords": ["cereal", "granola", "oats"],
+    "required_flags": {"is_low_sugar": true},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "high protein snacks",
+    "type": "nutrition",
+    "description": "High protein snack foods",
+    "relevant_keywords": ["snack", "bar", "nuts", "protein"],
+    "required_flags": {"is_high_protein": true},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "products with at least 20g protein",
+    "type": "nutrition_numeric",
+    "description": "Products with >= 20g protein per 100g",
+    "relevant_keywords": [],
+    "nutrition_constraint": {"nutrient": "protein", "operator": "gte", "value": 20.0},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "snacks under 200 calories",
+    "type": "nutrition_numeric",
+    "description": "Snacks with <= 200 kcal per 100g",
+    "relevant_keywords": ["snack"],
+    "nutrition_constraint": {"nutrient": "calories", "operator": "lte", "value": 200.0},
+    "disallowed_keywords": []
+  },
+  {
+    "query": "frozen vegetables",
+    "type": "category",
+    "description": "Frozen vegetables category",
+    "relevant_keywords": ["frozen", "vegetable", "peas", "corn", "broccoli", "blend"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "breakfast cereal",
+    "type": "category",
+    "description": "Breakfast cereal category",
+    "relevant_keywords": ["cereal", "granola", "flakes", "oats"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "pure maple syrup",
+    "type": "ingredient",
+    "description": "Pure maple syrup",
+    "relevant_keywords": ["maple", "syrup"],
+    "disallowed_keywords": ["table syrup", "pancake syrup"]
+  },
+  {
+    "query": "tomato sauce",
+    "type": "product",
+    "description": "Tomato sauce / pasta sauce",
+    "relevant_keywords": ["tomato", "sauce", "pasta"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "oat milk",
+    "type": "product",
+    "description": "Oat beverage / milk substitute",
+    "relevant_keywords": ["oat", "milk", "beverage"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "almond milk",
+    "type": "product",
+    "description": "Almond milk beverage",
+    "relevant_keywords": ["almond", "milk", "beverage"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "2% milk",
+    "type": "product_with_number",
+    "description": "2% partly skimmed milk",
+    "relevant_keywords": ["milk"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "Silk almond",
+    "type": "brand_product",
+    "description": "Silk brand almond beverage",
+    "relevant_brand": "silk",
+    "relevant_keywords": ["almond"],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "Kroger",
+    "type": "brand",
+    "description": "Kroger brand products",
+    "relevant_brand": "kroger",
+    "relevant_keywords": [],
+    "disallowed_keywords": []
+  },
+  {
+    "query": "extra virgin olive oil",
+    "type": "product",
+    "description": "Olive oil extra virgin",
+    "relevant_keywords": ["olive", "oil", "virgin"],
+    "disallowed_keywords": ["canola", "vegetable oil"]
+  },
+  {
+    "query": "canned black beans",
+    "type": "product",
+    "description": "Canned black beans",
+    "relevant_keywords": ["black", "bean"],
+    "disallowed_keywords": []
+  }
+]

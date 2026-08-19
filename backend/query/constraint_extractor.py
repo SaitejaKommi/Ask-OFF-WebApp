@@ -18,12 +18,14 @@ class ConstraintExtractor:
         
         numeric_filters = []
         modifiers = []
+        recipe_quantities = []
         
         cleaned_query = normalized_query
         explanations = []
         
+        # 1. Extract Modifiers (e.g. fresh, frozen, raw, pure, natural, wild, farmed, salted, unsalted)
         modifier_patterns = [
-            r"\b(?:fresh|frozen|raw|pure|natural|wild|farmed)\b"
+            r"\b(?:fresh|frozen|raw|pure|natural|wild|farmed|salted|unsalted)\b"
         ]
         for pattern in modifier_patterns:
             for match in re.finditer(pattern, cleaned_query):
@@ -32,12 +34,12 @@ class ConstraintExtractor:
                     modifiers.append(mod)
                     explanations.append({"field": "modifiers", "explanation": f"Extracted modifier '{mod}'"})
         
+        # 2. Extract Nutrient Numeric Constraints (e.g. 'under 200 calories', 'at least 20g protein')
         numeric_patterns = [
             (r"\b(?:under|less than|<|<=)\s*(\d+(?:\.\d+)?)\s*(g|mg|kcal|calories)(?:\s+([a-zA-Z]+))?\b", "lte"),
             (r"\b(?:at least|more than|>|>=|over)\s*(\d+(?:\.\d+)?)\s*(g|mg|kcal|calories)(?:\s+([a-zA-Z]+))?\b", "gte"),
         ]
         for pattern, op in numeric_patterns:
-            # We must use finditer to replace correctly without breaking the loop
             matches = list(re.finditer(pattern, cleaned_query))
             for match in matches:
                 val = float(match.group(1))
@@ -51,11 +53,39 @@ class ConstraintExtractor:
                     "comparison_basis": "per_100g"
                 })
                 explanations.append({"field": "numeric", "explanation": f"Numeric constraint: {nutrient} {op} {val}{unit}"})
+                cleaned_query = cleaned_query.replace(match.group(0), " ").strip()
+
+        # 3. Extract Recipe Quantities (e.g. '500 ml', '2 cups', '1/2 cup', '2 tbsp', '100g')
+        # Guard: do not strip fat percentages like '2% milk' or '1% milk' or single product codes/brands like '7up'
+        recipe_qty_patterns = [
+            r"\b(\d+(?:\.\d+)?|\d+/\d+)\s*(ml|milliliters?|millilitres?|l|liters?|litres?|cups?|tbsp|tablespoons?|tsp|teaspoons?|grams?|g|kg|kilograms?|oz|ounces?|lbs?|pounds?|cloves?|slices?|cans?|pkgs?|packages?|pinch)\b"
+        ]
+        for pattern in recipe_qty_patterns:
+            matches = list(re.finditer(pattern, cleaned_query))
+            for match in matches:
+                val_str = match.group(1)
+                unit_str = match.group(2)
                 
-                temp = cleaned_query.replace(match.group(0), "").strip()
-                if temp:
-                    cleaned_query = temp
-        
+                # Check fraction
+                if "/" in val_str:
+                    num, denom = val_str.split("/")
+                    val = float(num) / float(denom) if float(denom) != 0 else 0.0
+                else:
+                    val = float(val_str)
+                    
+                recipe_quantities.append({
+                    "raw": match.group(0),
+                    "value": val,
+                    "unit": unit_str
+                })
+                explanations.append({
+                    "field": "recipe_quantity",
+                    "explanation": f"Extracted recipe quantity: {match.group(0)} (separated from product retrieval term)"
+                })
+                # Remove recipe quantity token from search text
+                cleaned_query = cleaned_query.replace(match.group(0), " ").strip()
+
+        # 4. Extract Dietary & Certification Filters
         patterns = [
             (r"\b(?:organic|bio)\b", "organic", True, "Matched 'organic' or 'bio' keyword indicating organic certification"),
             (r"\bvegan\b", "vegan", True, "Matched 'vegan' keyword indicating vegan requirement"),
@@ -75,7 +105,6 @@ class ConstraintExtractor:
             if re.search(pattern, cleaned_query):
                 filters[key] = value
                 explanations.append({"field": key, "explanation": explanation})
-                
                 temp = re.sub(pattern, "", cleaned_query).strip()
                 if temp:
                     cleaned_query = temp
@@ -86,6 +115,8 @@ class ConstraintExtractor:
             "filters": filters,
             "numeric_filters": numeric_filters,
             "modifiers": modifiers,
+            "recipe_quantities": recipe_quantities,
             "explanations": explanations,
             "cleaned_query": cleaned_query
         }
+

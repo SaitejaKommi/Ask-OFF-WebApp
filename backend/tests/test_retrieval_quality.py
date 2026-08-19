@@ -1,12 +1,32 @@
+import socket
 import pytest
 from query.pipeline import SearchQueryPipeline
 from retrieval.search_engine import SearchEngine
 from repositories.opensearch_repository import OpenSearchSearchRepository
+from evaluation.evaluate import DuckDBSearchRepository
 
 @pytest.fixture(scope="module")
 def search_engine():
-    repo = OpenSearchSearchRepository()
+    # Fast check if OpenSearch port 9200 is open
+    opensearch_online = False
+    try:
+        with socket.create_connection(("localhost", 9200), timeout=0.1):
+            opensearch_online = True
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        opensearch_online = False
+
+    if opensearch_online:
+        try:
+            repo = OpenSearchSearchRepository()
+            return SearchEngine(repository=repo)
+        except Exception:
+            pass
+
+    # Fallback to local DuckDB repository over the 114k Canadian OFF dataset
+    repo = DuckDBSearchRepository()
     return SearchEngine(repository=repo)
+
+
 
 def test_retrieval_numeric_constraint_protein(search_engine):
     query = "products with at least 20g protein"

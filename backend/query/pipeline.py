@@ -41,6 +41,7 @@ class SearchQueryPipeline:
             filters=constraints["filters"],
             numeric_filters=constraints.get("numeric_filters", []),
             modifiers=constraints.get("modifiers", []),
+            recipe_quantities=constraints.get("recipe_quantities", []),
             ranking_preferences={},
             pagination={"size": size, "from": from_},
             metadata=metadata

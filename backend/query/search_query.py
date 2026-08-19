@@ -11,6 +11,7 @@ class SearchQuery(BaseModel):
     filters: Dict[str, Any] = Field(default_factory=dict)
     numeric_filters: List[Dict[str, Any]] = Field(default_factory=list)
     modifiers: List[str] = Field(default_factory=list)
+    recipe_quantities: List[Dict[str, Any]] = Field(default_factory=list)
     
     ranking_preferences: Dict[str, Any] = Field(default_factory=dict)
     
