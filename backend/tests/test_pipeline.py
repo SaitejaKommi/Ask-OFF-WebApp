@@ -1,11 +1,9 @@
-from unittest.mock import patch, MagicMock
-import pandas as pd
+from unittest.mock import MagicMock, patch
 
 from adapters.off_adapter import OFFAdapter
 from models.raw_product import RawProduct
 from models.search_document import SearchDocument
-from pipeline.load import write_normalized_parquet_batch, read_normalized_parquet_with_nutriments
-from pipeline.runner import run_pipeline
+from pipeline.load import read_normalized_parquet_with_nutriments, write_normalized_parquet_batch
 
 
 class TestOFFAdapterExtraction:

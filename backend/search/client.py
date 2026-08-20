@@ -1,4 +1,5 @@
 from opensearchpy import OpenSearch
+
 from config.settings import settings
 
 

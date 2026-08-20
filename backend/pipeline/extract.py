@@ -1,6 +1,8 @@
+from pathlib import Path
+
 import duckdb
 import pandas as pd
-from pathlib import Path
+
 from config.settings import settings
 
 REQUIRED_COLUMNS = [

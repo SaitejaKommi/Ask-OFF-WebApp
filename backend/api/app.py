@@ -1,14 +1,14 @@
-from opensearchpy.exceptions import ConnectionError, TransportError
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from opensearchpy.exceptions import ConnectionError, TransportError
 
-from .routes import router
 from config.settings import settings
 
+from .routes import router
 
-from contextlib import asynccontextmanager
 
 def create_app() -> FastAPI:
     @asynccontextmanager

@@ -1,14 +1,15 @@
-from models.search_document import SearchDocument
 from models.raw_product import RawProduct
+from models.search_document import SearchDocument
+
 
 class SearchDocumentBuilder:
     @staticmethod
     def build(raw: RawProduct) -> SearchDocument:
         nutrition_dict = raw.nutriments or {}
-        
+
         categories_lower = raw.categories.lower()
         ingredients_lower = raw.ingredients_text.lower()
-        
+
         is_organic = (
             "organic" in categories_lower
             or "organic" in ingredients_lower
@@ -17,9 +18,9 @@ class SearchDocumentBuilder:
         )
         is_vegan = "vegan" in categories_lower or "vegan" in ingredients_lower
         is_vegetarian = "vegetarian" in categories_lower or "vegetarian" in ingredients_lower or is_vegan
-        
+
         is_palm_oil_free = "palm oil" not in ingredients_lower
-        
+
         def get_nutrient_per_100g(key: str) -> float:
             val = nutrition_dict.get(key)
             if isinstance(val, dict):
@@ -27,7 +28,7 @@ class SearchDocumentBuilder:
                 if p is not None:
                     return float(p)
             return -1.0
-            
+
         proteins_100g = get_nutrient_per_100g("proteins")
         sugars_100g = get_nutrient_per_100g("sugars")
         sodium_100g = get_nutrient_per_100g("sodium")
@@ -37,7 +38,7 @@ class SearchDocumentBuilder:
         is_low_sodium = "low sodium" in categories_lower or "low salt" in categories_lower or (0 <= sodium_100g <= 0.12)
         is_gluten_free = "gluten free" in categories_lower or "gluten-free" in categories_lower or "sans gluten" in categories_lower
         is_lactose_free = "lactose free" in categories_lower or "dairy free" in categories_lower or "sans lactose" in categories_lower
-        
+
         attributes = {
             "nutrition": nutrition_dict,
             "flags": {
@@ -52,14 +53,14 @@ class SearchDocumentBuilder:
                 "is_lactose_free": is_lactose_free
             }
         }
-        
+
         metadata = {
             "nutriscore_grade": raw.nutriscore_grade,
             "nova_group": raw.nova_group,
             "ecoscore_grade": raw.ecoscore_grade,
             "completeness": raw.completeness
         }
-        
+
         parts = [
             p
             for p in [
@@ -71,7 +72,7 @@ class SearchDocumentBuilder:
             if p
         ]
         search_text = " ".join(parts)
-        
+
         sem_parts = []
         if raw.product_name:
             sem_parts.append(f"Product: {raw.product_name}")
@@ -82,7 +83,7 @@ class SearchDocumentBuilder:
         if raw.ingredients_text:
             sem_parts.append(f"Ingredients:\n{raw.ingredients_text}")
         semantic_document = "\n\n".join(sem_parts)
-        
+
         return SearchDocument(
             id=raw.code,
             dataset_id="openfoodfacts",

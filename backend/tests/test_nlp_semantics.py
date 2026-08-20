@@ -1,7 +1,5 @@
-import pytest
-from query.pipeline import SearchQueryPipeline
 from query import dictionaries
-import query.dictionaries
+from query.pipeline import SearchQueryPipeline
 
 # Mock dictionaries so entity extraction works predictably for tests
 dictionaries.BRANDS.update({"kirkland", "nature valley"})
@@ -80,7 +78,7 @@ def test_numeric_constraint_extraction():
     sq = SearchQueryPipeline.process("snacks under 200 calories")
     assert "snacks" in sq.text_term
     assert "under 200" not in sq.text_term
-    
+
     assert len(sq.numeric_filters) == 1
     nf = sq.numeric_filters[0]
     assert nf["nutrient"] == "calories"

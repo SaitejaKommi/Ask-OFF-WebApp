@@ -1,5 +1,6 @@
 import re
-from typing import Dict, Any, List
+from typing import Any, Dict
+
 
 class ConstraintExtractor:
     @staticmethod
@@ -15,14 +16,14 @@ class ConstraintExtractor:
             "gluten_free": None,
             "lactose_free": None
         }
-        
+
         numeric_filters = []
         modifiers = []
         recipe_quantities = []
-        
+
         cleaned_query = normalized_query
         explanations = []
-        
+
         # 1. Extract Modifiers (e.g. fresh, frozen, raw, pure, natural, wild, farmed, salted, unsalted)
         modifier_patterns = [
             r"\b(?:fresh|frozen|raw|pure|natural|wild|farmed|salted|unsalted)\b"
@@ -33,7 +34,7 @@ class ConstraintExtractor:
                 if mod not in modifiers:
                     modifiers.append(mod)
                     explanations.append({"field": "modifiers", "explanation": f"Extracted modifier '{mod}'"})
-        
+
         # 2. Extract Nutrient Numeric Constraints (e.g. 'under 200 calories', 'at least 20g protein')
         numeric_patterns = [
             (r"\b(?:under|less than|<|<=)\s*(\d+(?:\.\d+)?)\s*(g|mg|kcal|calories)(?:\s+([a-zA-Z]+))?\b", "lte"),
@@ -65,14 +66,14 @@ class ConstraintExtractor:
             for match in matches:
                 val_str = match.group(1)
                 unit_str = match.group(2)
-                
+
                 # Check fraction
                 if "/" in val_str:
                     num, denom = val_str.split("/")
                     val = float(num) / float(denom) if float(denom) != 0 else 0.0
                 else:
                     val = float(val_str)
-                    
+
                 recipe_quantities.append({
                     "raw": match.group(0),
                     "value": val,
@@ -108,9 +109,9 @@ class ConstraintExtractor:
                 temp = re.sub(pattern, "", cleaned_query).strip()
                 if temp:
                     cleaned_query = temp
-        
+
         cleaned_query = re.sub(r"\s+", " ", cleaned_query).strip()
-            
+
         return {
             "filters": filters,
             "numeric_filters": numeric_filters,

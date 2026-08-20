@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
+
 from models.raw_product import RawProduct
+
 
 class BaseAdapter(ABC):
     @abstractmethod

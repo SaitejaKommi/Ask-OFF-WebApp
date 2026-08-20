@@ -5,10 +5,10 @@ from typing import Optional, Type
 from adapters.base import BaseAdapter
 from adapters.off_adapter import OFFAdapter
 from builders.search_document_builder import SearchDocumentBuilder
+from config.settings import settings
+from models.search_document import SearchDocument
 from pipeline.load import write_normalized_parquet_batch
 from search.indexer import index_products
-from models.search_document import SearchDocument
-from config.settings import settings
 
 logger = logging.getLogger(__name__)
 

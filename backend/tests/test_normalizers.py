@@ -1,13 +1,10 @@
 from adapters.off_adapter import (
-    parse_product_name,
     parse_ingredients_text,
     parse_nutriments,
-    safe_str,
-    safe_float,
-    safe_int,
+    parse_product_name,
 )
-from models.raw_product import RawProduct
 from builders.search_document_builder import SearchDocumentBuilder
+from models.raw_product import RawProduct
 
 
 class TestOFFAdapterParsing:

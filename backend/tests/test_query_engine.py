@@ -1,26 +1,25 @@
-import pytest
-from query.tokenizer import QueryTokenizer
-from query.normalizer import QueryNormalizer
-from query.intent_detector import IntentDetector
-from query.entity_extractor import EntityExtractor
+from query import dictionaries
 from query.constraint_extractor import ConstraintExtractor
+from query.entity_extractor import EntityExtractor
+from query.intent_detector import IntentDetector
+from query.normalizer import QueryNormalizer
 from query.pipeline import SearchQueryPipeline
 from query.search_query import SearchQuery
-from query import dictionaries
+from query.tokenizer import QueryTokenizer
 
 # Populate dictionaries for tests since they are now dynamically loaded
 dictionaries.BRANDS.update({
-    "kirkland", "silk almond", "nature honey", "ferrero", "butternut mountain farm", "nestle", 
+    "kirkland", "silk almond", "nature honey", "ferrero", "butternut mountain farm", "nestle",
     "kellogg", "kraft", "cadbury", "hershey", "quaker", "butternut", "farm", "farmhouse"
 })
 
 dictionaries.CATEGORIES.update({
-    "honey", "milk substitutes", "beverages", "sweeteners", "syrups", "cereal", "snacks", 
+    "honey", "milk substitutes", "beverages", "sweeteners", "syrups", "cereal", "snacks",
     "chocolate", "yogurt", "maple syrup", "milk", "almond milk", "sweetener", "syrup"
 })
 
 dictionaries.INGREDIENTS.update({
-    "honey", "almond", "water", "sugar", "cocoa", "salt", "milk", "oats", "wheat", "peanuts", 
+    "honey", "almond", "water", "sugar", "cocoa", "salt", "milk", "oats", "wheat", "peanuts",
     "maple syrup", "palm oil", "calcium carbonate", "sea salt"
 })
 
@@ -98,7 +97,7 @@ class TestConstraintExtractor:
         )
         res = ConstraintExtractor.extract(query)
         filters = res["filters"]
-        
+
         assert filters["organic"] is True
         assert filters["vegan"] is True
         assert filters["vegetarian"] is True
@@ -108,7 +107,7 @@ class TestConstraintExtractor:
         assert filters["low_sodium"] is True
         assert filters["gluten_free"] is True
         assert filters["lactose_free"] is True
-        
+
         # Verify explanations trace
         exps = res["explanations"]
         assert len(exps) == 9
@@ -119,17 +118,17 @@ class TestSearchQueryPipeline:
     def test_pipeline_orchestrates_full_flow(self):
         q = "organic sugar-free syrup from butternut mountain farm"
         sq = SearchQueryPipeline.process(q)
-        
+
         assert isinstance(sq, SearchQuery)
         assert sq.original_query == q
         assert sq.normalized_query == "organic sugar-free syrup from butternut mountain farm"
         assert sq.filters["organic"] is True
         assert sq.filters["low_sugar"] is True
-        
+
         # Check brand entity extracted
         assert len(sq.entities["brands"]) == 1
         assert sq.entities["brands"][0]["value"] == "butternut mountain farm"
-        
+
         # Metadata check
         assert sq.metadata["took_ms"] >= 0
         assert len(sq.metadata["constraint_explanations"]) == 2

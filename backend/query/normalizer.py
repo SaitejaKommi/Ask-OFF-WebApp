@@ -1,5 +1,6 @@
 import re
 
+
 class QueryNormalizer:
     @staticmethod
     def normalize(query: str) -> str:

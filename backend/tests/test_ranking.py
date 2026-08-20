@@ -17,7 +17,7 @@ class TestRankingConfiguration:
         }
         repo = OpenSearchSearchRepository(client=mock_client)
         repo.search(query="test", size=10)
-        
+
         body = mock_client.search.call_args[1]["body"]
         should = body["query"]["function_score"]["query"]["bool"]["should"]
         assert len(should) == 1
@@ -38,7 +38,7 @@ class TestRankingConfiguration:
         }
         repo = OpenSearchSearchRepository(client=mock_client)
         repo.search(query="test", size=10)
-        
+
         body = mock_client.search.call_args[1]["body"]
         functions = body["query"]["function_score"]["functions"]
         assert len(functions) == 1
@@ -55,7 +55,7 @@ class TestRankingConfiguration:
         }
         repo = OpenSearchSearchRepository(client=mock_client)
         repo.search(query="test", size=10)
-        
+
         body = mock_client.search.call_args[1]["body"]
         should = body["query"]["function_score"]["query"]["bool"]["should"]
         fields = should[0]["bool"]["should"][0]["multi_match"]["fields"]
@@ -77,7 +77,7 @@ class TestRankingConfiguration:
         }
         repo = OpenSearchSearchRepository(client=mock_client)
         repo.search(query="test", size=10)
-        
+
         body = mock_client.search.call_args[1]["body"]
         factor = body["query"]["function_score"]["functions"][0]["field_value_factor"]["factor"]
         assert 0.0 <= factor <= 1.0

@@ -37,21 +37,21 @@ PRODUCT_INDEX_MAPPING = {
                 },
             },
             "brand": {
-                "type": "text", 
+                "type": "text",
                 "analyzer": "standard",
                 "fields": {
                     "keyword": {"type": "keyword", "ignore_above": 256}
                 }
             },
             "category": {
-                "type": "text", 
+                "type": "text",
                 "analyzer": "standard",
                 "fields": {
                     "keyword": {"type": "keyword", "ignore_above": 256}
                 }
             },
             "ingredients": {
-                "type": "text", 
+                "type": "text",
                 "analyzer": "standard",
                 "fields": {
                     "keyword": {"type": "keyword", "ignore_above": 256}

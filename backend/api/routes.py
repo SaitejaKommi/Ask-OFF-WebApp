@@ -1,9 +1,11 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional, List
 
 from models.search import SearchResponse
 from models.search_document import SearchDocument
 from retrieval.search_engine import SearchEngine
+
 from .dependencies import get_search_engine
 
 router = APIRouter()
@@ -43,6 +45,7 @@ async def search(
     is_organic: Optional[bool] = Query(None),
     is_vegan: Optional[bool] = Query(None),
     is_vegetarian: Optional[bool] = Query(None),
+    explain: bool = Query(False),
     engine: SearchEngine = Depends(get_search_engine),
 ):
     filters = {}
@@ -56,12 +59,13 @@ async def search(
         filters["vegan"] = is_vegan
     if is_vegetarian is not None:
         filters["vegetarian"] = is_vegetarian
-    
+
     return engine.search(
         query=q,
         filters=filters if filters else None,
         size=size,
         from_=from_,
+        explain=explain,
     )
 
 

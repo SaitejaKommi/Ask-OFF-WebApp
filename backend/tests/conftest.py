@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from api.app import create_app
 from api.dependencies import get_search_engine
-from models.search import SearchResponse, SearchHit
+from models.search import SearchHit, SearchResponse
 from models.search_document import SearchDocument
 
 

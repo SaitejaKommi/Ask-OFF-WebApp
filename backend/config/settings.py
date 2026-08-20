@@ -1,6 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     opensearch_password: Optional[str] = None
     opensearch_verify_certs: bool = False
 
-    raw_data_path: Path = Path("data/raw/open_food_facts_canada_all_columns.csv")
+    raw_data_path: Path = Path("data/raw/normalized.parquet")
     processed_dir: Path = Path("data/processed")
     dataset_url: str = ""
 
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     pipeline_batch_size: int = 1000
-    
+
     cors_origins: list[str] = ["*"]
     completeness_weight: float = 0.15
 

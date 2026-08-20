@@ -1,5 +1,6 @@
 import re
 
+
 class QueryParser:
     @staticmethod
     def parse(query: str) -> str:

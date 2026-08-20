@@ -3,8 +3,8 @@ import sys
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
 import uvicorn  # noqa: E402
+
 from config.settings import settings  # noqa: E402
-from api.app import app  # noqa: E402
 
 if __name__ == "__main__":
     uvicorn.run(

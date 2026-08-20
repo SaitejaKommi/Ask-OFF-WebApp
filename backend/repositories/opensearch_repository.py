@@ -1,11 +1,12 @@
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
+
 from opensearchpy import OpenSearch
 from opensearchpy.exceptions import NotFoundError
 
-from models.search_document import SearchDocument
-from retrieval.repository import SearchRepository
-from retrieval.ranking import RankingManager
 from config.settings import settings
+from models.search_document import SearchDocument
+from retrieval.ranking import RankingManager
+from retrieval.repository import SearchRepository
 from search.client import get_client
 
 NUTRIENT_FIELD_MAP = {
@@ -32,22 +33,22 @@ class OpenSearchSearchRepository(SearchRepository):
         self.ranking_manager = ranking_manager or RankingManager()
 
     def search(
-        self, 
-        query: str, 
-        filters: Optional[dict] = None, 
+        self,
+        query: str,
+        filters: Optional[dict] = None,
         numeric_filters: Optional[List[dict]] = None,
         modifiers: Optional[List[str]] = None,
-        size: int = 20, 
+        size: int = 20,
         from_: int = 0,
         explain: bool = False
     ) -> Tuple[int, List[Tuple[float, SearchDocument]], dict]:
-        
+
         must_clauses = []
         should_clauses = []
         must_not_clauses = []
-        
+
         fields = self.ranking_manager.get_search_fields()
-        
+
         if query and query != "*":
             should_clauses.append({
                 "bool": {
@@ -84,7 +85,7 @@ class OpenSearchSearchRepository(SearchRepository):
             })
         elif query == "*":
             must_clauses.append({"match_all": {}})
-            
+
         if modifiers:
             # Boost for modifiers like fresh, frozen, raw, salted
             for mod in modifiers:
@@ -96,7 +97,7 @@ class OpenSearchSearchRepository(SearchRepository):
                         }
                     }
                 })
-        
+
         if filters:
             for k, v in filters.items():
                 if k == "brand" and v:
@@ -114,19 +115,19 @@ class OpenSearchSearchRepository(SearchRepository):
                         # Must contain palm oil
                         must_clauses.append({"match": {"ingredients": "palm oil"}})
                 elif k.startswith("is_") and v is not None:
-                    # For other boolean constraints, we keep them as must for now, 
+                    # For other boolean constraints, we keep them as must for now,
                     # but they could also be softened.
                     must_clauses.append({"term": {f"attributes.flags.{k}": v}})
-                    
+
         if numeric_filters:
             for nf in numeric_filters:
                 nutrient = nf.get("nutrient")
                 op = nf.get("operator")
                 val = nf.get("value")
                 basis = nf.get("comparison_basis", "per_100g")
-                
+
                 mapped_nutrient = NUTRIENT_FIELD_MAP.get(nutrient, nutrient)
-                
+
                 field_path = f"attributes.nutrition.{mapped_nutrient}.{basis}"
                 must_clauses.append({
                     "range": {
@@ -135,7 +136,7 @@ class OpenSearchSearchRepository(SearchRepository):
                         }
                     }
                 })
-        
+
         if not must_clauses and not should_clauses:
             must_clauses.append({"match_all": {}})
 
@@ -148,7 +149,7 @@ class OpenSearchSearchRepository(SearchRepository):
             }
         }
 
-        
+
         query_body = {
             "size": size,
             "from": from_,
@@ -168,22 +169,22 @@ class OpenSearchSearchRepository(SearchRepository):
                 }
             }
         }
-        
+
         response = self.client.search(index=self.index, body=query_body)
-        
+
         hits = response["hits"]["hits"]
         total = response["hits"]["total"]["value"]
-        
+
         results = []
         for h in hits:
             score = h["_score"]
             doc = SearchDocument(**h["_source"])
             results.append((score, doc))
-            
+
         metadata = {}
         if explain:
             metadata["opensearch_query"] = query_body
-            
+
         return total, results, metadata
 
     def get_by_id(self, doc_id: str) -> Optional[SearchDocument]:

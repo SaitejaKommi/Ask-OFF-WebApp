@@ -1,5 +1,5 @@
-from retrieval.repository import SearchRepository
 from repositories.opensearch_repository import OpenSearchSearchRepository
+from retrieval.repository import SearchRepository
 from retrieval.search_engine import SearchEngine
 
 _search_repository: SearchRepository | None = None

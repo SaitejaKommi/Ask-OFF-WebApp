@@ -1,6 +1,8 @@
 from typing import Iterable
+
 from adapters.base import BaseAdapter
 from models.raw_product import RawProduct
+
 
 class ReferenceAdapter(BaseAdapter):
     def extract_raw_products(self, limit: int | None = None) -> Iterable[RawProduct]:
@@ -30,7 +32,7 @@ class ReferenceAdapter(BaseAdapter):
                 completeness=0.85
             )
         ]
-        
+
         count = 0
         for p in mock_products:
             if limit is not None and count >= limit:

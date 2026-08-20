@@ -1,6 +1,7 @@
-import re
+import json
 import logging
 import math
+import re
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 def parse_multilingual_field(raw: str) -> list[dict[str, str]]:
     if not raw or raw == "[]":
         return []
-    
+
     blocks = re.findall(r'\{([^{}]+)\}', raw)
     results = []
     for block in blocks:
@@ -19,7 +20,7 @@ def parse_multilingual_field(raw: str) -> list[dict[str, str]]:
             text_match = re.search(r"['\"]text['\"]\s*:\s*'(.*)'\s*$", block, re.DOTALL)
             if not text_match:
                 text_match = re.search(r"['\"]text['\"]\s*:\s*\"(.*)\"\s*$", block, re.DOTALL)
-        
+
         if lang_match and text_match:
             results.append({
                 "lang": lang_match.group(1),
@@ -57,10 +58,49 @@ def parse_ingredients_text(raw: str) -> str:
     return extract_text_by_language(entries)
 
 
-def parse_nutriments(raw: str) -> dict[str, dict]:
-    if not raw or raw == "[]":
-        return {}
-    
+def _coerce_float(val: Any) -> Optional[float]:
+    if val is None:
+        return None
+    if isinstance(val, float) and math.isnan(val):
+        return None
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return None
+
+
+def _normalize_nutriment_object(obj: dict) -> dict[str, dict]:
+    """Normalize a JSON-style nutriment object into {name: {value, per_100g, unit}}."""
+    result = {}
+    for name, entry in obj.items():
+        if not isinstance(name, str):
+            continue
+        if isinstance(entry, dict):
+            value = _coerce_float(entry.get("value"))
+            per_100g = _coerce_float(entry.get("per_100g", entry.get("100g")))
+            unit = entry.get("unit")
+            if unit is not None and not isinstance(unit, str):
+                unit = str(unit) if not isinstance(unit, float) or not math.isnan(unit) else None
+        elif isinstance(entry, (int, float)) and not isinstance(entry, bool):
+            value = _coerce_float(entry)
+            per_100g = value
+            unit = None
+        else:
+            continue
+        result[name] = {
+            "value": value,
+            "per_100g": per_100g,
+            "unit": unit if isinstance(unit, str) and unit else None,
+        }
+    # Alias 'energy' to 'energy-kcal' when the latter is absent so existing
+    # nutrient field mappings (calories/kcal -> energy-kcal) keep working.
+    if "energy" in result and "energy-kcal" not in result:
+        result["energy-kcal"] = result["energy"]
+    return result
+
+
+def _parse_nutriments_list_style(raw: str) -> dict[str, dict]:
+    """Parse the OFF CSV-export list-of-dicts style (legacy format)."""
     blocks = re.findall(r'\{([^{}]+)\}', raw)
     result = {}
     for block in blocks:
@@ -68,7 +108,7 @@ def parse_nutriments(raw: str) -> dict[str, dict]:
         if not name_match:
             continue
         name = name_match.group(1)
-        
+
         value_match = re.search(r"['\"]value['\"]\s*:\s*([^\s,}]+)", block)
         value = None
         if value_match:
@@ -78,7 +118,7 @@ def parse_nutriments(raw: str) -> dict[str, dict]:
                     value = float(val_str)
                 except ValueError:
                     pass
-        
+
         per_100g_match = re.search(r"['\"]100g['\"]\s*:\s*([^\s,}]+)", block)
         per_100g = None
         if per_100g_match:
@@ -88,18 +128,51 @@ def parse_nutriments(raw: str) -> dict[str, dict]:
                     per_100g = float(val_str)
                 except ValueError:
                     pass
-        
+
         unit_match = re.search(r"['\"]unit['\"]\s*:\s*['\"]([^'\"]*)['\"]", block)
         unit = None
         if unit_match:
             unit = unit_match.group(1)
-            
+
         result[name] = {
             "value": value,
             "per_100g": per_100g,
             "unit": unit
         }
     return result
+
+
+def parse_nutriments(raw: Any) -> dict[str, dict]:
+    """
+    Parse a nutriments field into {name: {"value", "per_100g", "unit"}}.
+
+    Supports:
+    - JSON-style objects:  {"energy": {"value": 333.0, "per_100g": 1393.0, "unit": "kcal"}}
+    - Legacy OF-list-style strings from the OFF CSV export format
+    - dict inputs (already parsed JSON)
+
+    Never raises on malformed input; returns {} for empty/unparseable values.
+    """
+    if not raw or raw == "[]":
+        return {}
+
+    if isinstance(raw, dict):
+        return _normalize_nutriment_object(raw)
+
+    if not isinstance(raw, str):
+        return {}
+
+    text = raw.strip()
+    if text.startswith("{"):
+        try:
+            obj = json.loads(text)
+        except (ValueError, TypeError):
+            return {}
+        if not isinstance(obj, dict):
+            return {}
+        return _normalize_nutriment_object(obj)
+
+    return _parse_nutriments_list_style(text)
 
 def safe_str(val: Any) -> str:
     if val is None:

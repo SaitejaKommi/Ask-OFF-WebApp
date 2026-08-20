@@ -4,23 +4,21 @@ Computes Precision@5, Precision@10, NDCG@10, and MRR across the 35-query benchma
 Supports both live OpenSearch clusters and the local 114k Parquet engine.
 """
 
-import sys
 import json
-import time
 import math
+import sys
+import time
 from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # Ensure backend modules can be imported
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import duckdb
-from query.pipeline import SearchQueryPipeline
-from query.search_query import SearchQuery
+
 from models.search_document import SearchDocument
-from models.search import SearchResponse, SearchHit
-from retrieval.search_engine import SearchEngine
 from repositories.opensearch_repository import OpenSearchSearchRepository
+from retrieval.search_engine import SearchEngine
 
 
 class DuckDBSearchRepository:
@@ -29,14 +27,19 @@ class DuckDBSearchRepository:
     tiered multi-match lexical scoring and filtering rules as OpenSearchSearchRepository.
     Used for local benchmarking on the 114k dataset when an external OpenSearch cluster is offline.
     """
-    def __init__(self, parquet_path: str = "backend/data/processed/normalized.parquet") -> None:
+    def __init__(self, parquet_path: str = "data/raw/normalized.parquet") -> None:
         self.parquet_path = parquet_path
         self.con = duckdb.connect()
         # Verify parquet exists
         if not Path(parquet_path).exists():
-            fallback = Path("data/processed/normalized.parquet")
-            if fallback.exists():
-                self.parquet_path = str(fallback)
+            fallbacks = [
+                Path("backend/data/processed/normalized.parquet"),
+                Path("data/processed/normalized.parquet"),
+            ]
+            for fallback in fallbacks:
+                if fallback.exists():
+                    self.parquet_path = str(fallback)
+                    break
 
     def search(
         self,
@@ -54,10 +57,10 @@ class DuckDBSearchRepository:
 
         # Load candidate rows matching query terms or filters
         tokens = [t.lower() for t in query.split() if len(t) > 1] if query else []
-        
+
         # Build SQL where conditions for hard filters & candidate matching
         where_clauses = []
-        
+
         if "brand" in filters and filters["brand"]:
             b_val = filters["brand"].replace("'", "''").lower()
             where_clauses.append(f"(lower(brands_clean) LIKE '%{b_val}%' OR lower(brands) LIKE '%{b_val}%')")
@@ -85,7 +88,7 @@ class DuckDBSearchRepository:
             where_clauses.append("(" + " OR ".join(token_conditions) + ")")
 
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
-        
+
         # Retrieve candidates from the 114k Parquet dataset
         fetch_limit = 2000
         sql = f"""
@@ -136,8 +139,8 @@ class DuckDBSearchRepository:
             if filters.get("is_low_sugar") is True and not is_low_sugar: continue
 
             # Parse nutriments
-            from utils.off_parser import parse_nutriments
             from repositories.opensearch_repository import NUTRIENT_FIELD_MAP
+            from utils.off_parser import parse_nutriments
             parsed_nutriments = parse_nutriments(nut_raw)
 
             # Check numeric nutrient filters (e.g. at least 20g protein, under 200 calories)
@@ -362,7 +365,15 @@ def run_benchmark():
     print("=" * 85)
 
     # Initialize search engine (local DuckDB repository)
-    repo = DuckDBSearchRepository()
+    repo_name = "duckdb"
+    if "--repo" in sys.argv:
+        repo_name = sys.argv[sys.argv.index("--repo") + 1]
+    if repo_name == "opensearch":
+        print("BACKEND: LIVE OpenSearch (full 114k index)")
+        repo = OpenSearchSearchRepository()
+    else:
+        print("BACKEND: Local DuckDB (114k Parquet)")
+        repo = DuckDBSearchRepository()
     engine = SearchEngine(repository=repo)
 
     results_table = []

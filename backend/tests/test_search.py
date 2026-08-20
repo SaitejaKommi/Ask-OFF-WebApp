@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
+
+from models.search_document import SearchDocument
 from repositories.opensearch_repository import OpenSearchSearchRepository
 from search.mappings import PRODUCT_INDEX_MAPPING
-from models.search_document import SearchDocument
 
 
 class TestOpenSearchSearchRepository:
@@ -58,12 +59,12 @@ class TestOpenSearchSearchRepository:
         mock_client = MagicMock()
         mock_client.search.return_value = {"hits": {"total": {"value": 0}, "hits": []}}
         repo = OpenSearchSearchRepository(client=mock_client)
-        
+
         repo.search(query="honey", filters={"is_organic": True})
-        
+
         body_passed = mock_client.search.call_args[1]["body"]
         bool_query = body_passed["query"]["function_score"]["query"]["bool"]
-        
+
         # Should have a should clause (for text search)
         assert len(bool_query["should"]) == 1
         # Should have a must clause (for organic filter)

@@ -1,16 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
+
 from models.search_document import SearchDocument
+
 
 class SearchRepository(ABC):
     @abstractmethod
     def search(
-        self, 
-        query: str, 
-        filters: Optional[dict] = None, 
+        self,
+        query: str,
+        filters: Optional[dict] = None,
         numeric_filters: Optional[List[dict]] = None,
         modifiers: Optional[List[str]] = None,
-        size: int = 20, 
+        size: int = 20,
         from_: int = 0,
         explain: bool = False
     ) -> Tuple[int, List[Tuple[float, SearchDocument]], dict]:
@@ -18,7 +20,7 @@ class SearchRepository(ABC):
         Runs search and returns total count, list of (score, SearchDocument), and metadata dict.
         """
         pass
-    
+
     @abstractmethod
     def get_by_id(self, doc_id: str) -> Optional[SearchDocument]:
         """

@@ -1,5 +1,7 @@
 from typing import Dict, List
+
 from config.settings import settings
+
 
 class RankingManager:
     def __init__(self) -> None:

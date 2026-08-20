@@ -1,5 +1,6 @@
 from typing import List
 
+
 class QueryTokenizer:
     @staticmethod
     def tokenize(query: str) -> List[str]:
@@ -15,7 +16,7 @@ class QueryTokenizer:
             for i in range(n_tokens - n + 1):
                 ngram = " ".join(tokens[i:i + n])
                 ngrams.append(ngram)
-        # Sort ngrams by length descending so that longer matches (e.g. "butternut mountain farm") 
+        # Sort ngrams by length descending so that longer matches (e.g. "butternut mountain farm")
         # are processed or ranked before shorter matches (e.g. "butternut") during parsing.
         ngrams.sort(key=len, reverse=True)
         return ngrams

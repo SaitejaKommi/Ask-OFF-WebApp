@@ -1,18 +1,19 @@
 import logging
 from pathlib import Path
-from typing import Iterable, Any, Optional
+from typing import Iterable
+
 import duckdb
 
 from adapters.base import BaseAdapter
-from models.raw_product import RawProduct
 from config.settings import settings
+from models.raw_product import RawProduct
 from utils.off_parser import (
-    parse_product_name,
     parse_ingredients_text,
     parse_nutriments,
-    safe_str,
+    parse_product_name,
     safe_float,
     safe_int,
+    safe_str,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class OFFAdapter(BaseAdapter):
         # If the default raw path doesn't exist, check local 114k parquet or fallback paths
         if not Path(self.data_path).exists():
             candidates = [
+                Path("data/raw/normalized.parquet"),
                 Path("backend/data/processed/normalized.parquet"),
                 Path("data/processed/normalized.parquet"),
                 Path("data/raw/open_food_facts_canada_all_columns.csv"),
@@ -45,7 +47,7 @@ class OFFAdapter(BaseAdapter):
                 # Detect available columns in parquet
                 schema = con.execute(f"DESCRIBE SELECT * FROM '{self.data_path}'").fetchall()
                 col_names = {c[0].lower() for c in schema}
-                
+
                 name_col = "product_name_clean" if "product_name_clean" in col_names else "product_name"
                 brand_col = "brands_clean" if "brands_clean" in col_names else ("brands" if "brands" in col_names else "brand")
                 cat_col = "categories_clean" if "categories_clean" in col_names else ("categories" if "categories" in col_names else "category")
@@ -56,7 +58,7 @@ class OFFAdapter(BaseAdapter):
                 nova_col = "nova_group" if "nova_group" in col_names else "NULL as nova_group"
                 eco_col = "ecoscore_grade" if "ecoscore_grade" in col_names else "NULL as ecoscore_grade"
                 comp_col = "completeness" if "completeness" in col_names else "NULL as completeness"
-                
+
                 query = f"""
                     SELECT 
                         {code_col} as code, 
@@ -91,7 +93,7 @@ class OFFAdapter(BaseAdapter):
                 query += f" LIMIT {limit}"
 
             res = con.execute(query)
-            
+
             while True:
                 chunk = res.fetchmany(settings.pipeline_batch_size)
                 if not chunk:
@@ -103,17 +105,17 @@ class OFFAdapter(BaseAdapter):
                     raw_categories = safe_str(row[3])
                     raw_ingredients = safe_str(row[4])
                     raw_nutriments = safe_str(row[5])
-                    
+
                     product_name = parse_product_name(raw_product_name)
                     if not product_name:
                         product_name = raw_product_name.strip()
-                        
+
                     ingredients_text = parse_ingredients_text(raw_ingredients)
                     if not ingredients_text:
                         ingredients_text = raw_ingredients.strip()
-                        
+
                     nutriments = parse_nutriments(raw_nutriments)
-                    
+
                     yield RawProduct(
                         code=code,
                         product_name=product_name,
