@@ -1,0 +1,372 @@
+[
+  {
+    "query": "Compliments peanut butter",
+    "type": "brand_product",
+    "description": "Compliments branded peanut butter",
+    "relevance": {
+      "brand": "compliments",
+      "required_any": [["peanut", "butter"], ["peanut butter"]],
+      "group_scope": "name",
+      "excluded": [{"term": "bar", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Compliments strawberry cereal bars",
+    "type": "brand_product",
+    "description": "Compliments strawberry cereal bars",
+    "relevance": {
+      "brand": "compliments",
+      "required_any": [["strawberry", "cereal", "bar"], ["strawberry", "cereal"]],
+      "group_scope": "name",
+      "excluded": [{"term": "granola", "scope": "name"}, {"term": "7 grain", "scope": "name"}, {"term": "7-grain", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Compliments cottage cheese",
+    "type": "brand_product",
+    "description": "Compliments cottage cheese",
+    "relevance": {
+      "brand": "compliments",
+      "required_any": [["cottage", "cheese"]],
+      "group_scope": "name",
+      "excluded": []
+    }
+  },
+  {
+    "query": "Compliments soy sauce",
+    "type": "brand_product",
+    "description": "Compliments soy sauce (soy/soya synonym)",
+    "relevance": {
+      "brand": "compliments",
+      "required_any": [["soy", "sauce"], ["soya", "sauce"], ["soy sauce"], ["soya sauce"]],
+      "group_scope": "name",
+      "excluded": [{"term": "burger", "scope": "name"}]
+    }
+  },
+  {
+    "query": "500 mL (2 cups) frozen blueberries",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with volume & cups",
+    "relevance": {
+      "required_any": [["frozen", "blueberry"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "jam", "scope": "anywhere"}, {"term": "juice", "scope": "anywhere"}, {"term": "syrup", "scope": "anywhere"}, {"term": "pie", "scope": "anywhere"}]
+    }
+  },
+  {
+    "query": "2 tbsp salted butter",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with tablespoon & modifier",
+    "relevance": {
+      "required_any": [["salted", "butter"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "peanut", "scope": "name"}, {"term": "almond", "scope": "name"}]
+    }
+  },
+  {
+    "query": "1 cup rolled oats",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with cup & oats",
+    "relevance": {
+      "required_any": [["oat"], ["rolled", "oat"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "soap", "scope": "anywhere"}, {"term": "lotion", "scope": "anywhere"}, {"term": "bar", "scope": "name"}]
+    }
+  },
+  {
+    "query": "250g fresh tomatoes",
+    "type": "recipe_ingredient",
+    "description": "Recipe ingredient with weight in grams",
+    "relevance": {
+      "required_any": [["tomato"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "soup", "scope": "name"}, {"term": "paste", "scope": "name"}, {"term": "ketchup", "scope": "name"}]
+    }
+  },
+  {
+    "query": "frozen blueberries",
+    "type": "product_modifier",
+    "description": "Frozen blueberries search",
+    "relevance": {
+      "required_any": [["frozen", "blueberry"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "jam", "scope": "anywhere"}, {"term": "juice", "scope": "anywhere"}, {"term": "syrup", "scope": "anywhere"}]
+    }
+  },
+  {
+    "query": "peanut butter",
+    "type": "product",
+    "description": "Standard peanut butter search",
+    "relevance": {
+      "required_any": [["peanut", "butter"], ["peanut butter"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "cookie", "scope": "name"}, {"term": "bar", "scope": "name"}, {"term": "ice cream", "scope": "name"}]
+    }
+  },
+  {
+    "query": "milk",
+    "type": "product",
+    "description": "Dairy or plant milk search",
+    "relevance": {
+      "required_any": [["milk"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "chocolate bar", "scope": "name"}, {"term": "cookie", "scope": "name"}, {"term": "milk chocolate", "scope": "name"}]
+    }
+  },
+  {
+    "query": "bread",
+    "type": "product",
+    "description": "Bread loaf search",
+    "relevance": {
+      "required_any": [["bread"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "crumb", "scope": "name"}, {"term": "crouton", "scope": "name"}]
+    }
+  },
+  {
+    "query": "butter",
+    "type": "product",
+    "description": "Dairy butter search",
+    "relevance": {
+      "required_any": [["butter"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "peanut", "scope": "name"}, {"term": "almond", "scope": "name"}, {"term": "body butter", "scope": "name"}]
+    }
+  },
+  {
+    "query": "chips",
+    "type": "product",
+    "description": "Potato or tortilla chips search",
+    "relevance": {
+      "required_any": [["chip"], ["crisp"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "chocolate chip", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "coffee",
+    "type": "product",
+    "description": "Ground or whole bean coffee search",
+    "relevance": {
+      "required_any": [["coffee"]],
+      "group_scope": "anywhere",
+      "optional": ["roast", "espresso", "ground"],
+      "excluded": [{"term": "creamer", "scope": "name"}, {"term": "candy", "scope": "name"}, {"term": "ice cream", "scope": "name"}, {"term": "coffee crisp", "scope": "name"}]
+    }
+  },
+  {
+    "query": "chocolate cookies",
+    "type": "product",
+    "description": "Chocolate cookies search",
+    "relevance": {
+      "required_any": [["chocolate", "cookie"], ["chocolate", "biscuit"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "chocolate bar", "scope": "name"}]
+    }
+  },
+  {
+    "query": "gluten free bread",
+    "type": "dietary",
+    "description": "Gluten-free bread",
+    "relevance": {
+      "required_any": [["bread"]],
+      "required_flags": {"is_gluten_free": true},
+      "group_scope": "anywhere",
+      "excluded": []
+    }
+  },
+  {
+    "query": "vegan cookies",
+    "type": "dietary",
+    "description": "Vegan certified cookies",
+    "relevance": {
+      "required_any": [["cookie"], ["biscuit"]],
+      "required_flags": {"is_vegan": true},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "cookie dough", "scope": "name"}]
+    }
+  },
+  {
+    "query": "organic maple syrup",
+    "type": "dietary",
+    "description": "Organic maple syrup",
+    "relevance": {
+      "required_any": [["maple", "syrup"]],
+      "required_flags": {"is_organic": true},
+      "group_scope": "anywhere",
+      "excluded": []
+    }
+  },
+  {
+    "query": "palm oil free peanut butter",
+    "type": "dietary",
+    "description": "Palm oil free peanut butter",
+    "relevance": {
+      "required_any": [["peanut", "butter"], ["peanut butter"]],
+      "required_flags": {"is_palm_oil_free": true},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "bar", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "low sugar cereal",
+    "type": "nutrition",
+    "description": "Low sugar breakfast cereal",
+    "relevance": {
+      "required_any": [["cereal"], ["granola"], ["flake"]],
+      "required_flags": {"is_low_sugar": true},
+      "nutrition": {"nutrient": "sugars", "operator": "lte", "value": 5.0},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "bar", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "high protein snacks",
+    "type": "nutrition",
+    "description": "High protein snack foods",
+    "relevance": {
+      "required_any": [["snack"], ["bar"], ["protein"]],
+      "required_flags": {"is_high_protein": true},
+      "nutrition": {"nutrient": "proteins", "operator": "gte", "value": 10.0},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "protein shake", "scope": "name"}, {"term": "protein bar", "scope": "name"}]
+    }
+  },
+  {
+    "query": "products with at least 20g protein",
+    "type": "nutrition_numeric",
+    "description": "Products with >= 20g protein per 100g",
+    "relevance": {
+      "nutrition": {"nutrient": "proteins", "operator": "gte", "value": 20.0},
+      "group_scope": "anywhere",
+      "excluded": []
+    }
+  },
+  {
+    "query": "snacks under 200 calories",
+    "type": "nutrition_numeric",
+    "description": "Snacks with <= 200 kcal per 100g",
+    "relevance": {
+      "nutrition": {"nutrient": "energy-kcal", "operator": "lte", "value": 200.0},
+      "required_any": [["snack"]],
+      "group_scope": "anywhere",
+      "excluded": []
+    }
+  },
+  {
+    "query": "frozen vegetables",
+    "type": "category",
+    "description": "Frozen vegetables category",
+    "relevance": {
+      "required_any": [["frozen", "vegetable"], ["frozen", "pea"], ["frozen", "corn"], ["frozen", "broccoli"], ["frozen", "bean"], ["frozen", "spinach"], ["frozen", "mix"], ["frozen", "blend"], ["frozen", "pepper"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "butter", "scope": "name"}, {"term": "pizza", "scope": "name"}]
+    }
+  },
+  {
+    "query": "breakfast cereal",
+    "type": "category",
+    "description": "Breakfast cereal category",
+    "relevance": {
+      "required_any": [["cereal"], ["granola"], ["flake"], ["oat"]],
+      "group_scope": "anywhere",
+      "optional": ["breakfast"],
+      "excluded": [{"term": "bar", "scope": "name"}, {"term": "cookie", "scope": "name"}, {"term": "dog", "scope": "name"}]
+    }
+  },
+  {
+    "query": "pure maple syrup",
+    "type": "ingredient",
+    "description": "Pure maple syrup",
+    "relevance": {
+      "required_any": [["maple", "syrup"]],
+      "group_scope": "anywhere",
+      "optional": ["pure"],
+      "excluded": [{"term": "pancake", "scope": "name"}, {"term": "table", "scope": "name"}]
+    }
+  },
+  {
+    "query": "tomato sauce",
+    "type": "product",
+    "description": "Tomato sauce / pasta sauce",
+    "relevance": {
+      "required_any": [["tomato", "sauce"], ["pasta", "sauce"], ["spaghetti", "sauce"], ["marinara"]],
+      "group_scope": "name",
+      "excluded": [{"term": "paste", "scope": "name"}, {"term": "ketchup", "scope": "name"}, {"term": "soup", "scope": "name"}]
+    }
+  },
+  {
+    "query": "oat milk",
+    "type": "product",
+    "description": "Oat beverage / milk substitute",
+    "relevance": {
+      "required_any": [["oat", "milk"], ["oat", "beverage"], ["oat", "drink"]],
+      "group_scope": "name",
+      "excluded": [{"term": "cookie", "scope": "name"}, {"term": "cereal", "scope": "name"}]
+    }
+  },
+  {
+    "query": "almond milk",
+    "type": "product",
+    "description": "Almond milk beverage",
+    "relevance": {
+      "required_any": [["almond", "milk"], ["almond", "beverage"], ["almond", "drink"]],
+      "group_scope": "name",
+      "optional": ["unsweetened"],
+      "excluded": [{"term": "cookie", "scope": "name"}, {"term": "cake", "scope": "name"}, {"term": "ice cream", "scope": "name"}]
+    }
+  },
+  {
+    "query": "2% milk",
+    "type": "product_with_number",
+    "description": "2% partly skimmed milk",
+    "relevance": {
+      "required_any": [["2%", "milk"], ["2 %", "milk"], ["2", "milk"]],
+      "group_scope": "name",
+      "excluded": [{"term": "chocolate", "scope": "name"}, {"term": "croissant", "scope": "name"}, {"term": "creamer", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Silk almond",
+    "type": "brand_product",
+    "description": "Silk brand almond beverage",
+    "relevance": {
+      "brand": "silk",
+      "required_any": [["almond", "milk"], ["almond", "beverage"], ["almond"]],
+      "group_scope": "name",
+      "excluded": [{"term": "cooking spray", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Kroger",
+    "type": "brand",
+    "description": "Kroger brand products",
+    "relevance": {
+      "brand": "kroger",
+      "group_scope": "anywhere",
+      "excluded": []
+    }
+  },
+  {
+    "query": "extra virgin olive oil",
+    "type": "product",
+    "description": "Olive oil extra virgin",
+    "relevance": {
+      "required_any": [["olive", "oil"]],
+      "group_scope": "anywhere",
+      "optional": ["virgin"],
+      "excluded": [{"term": "canola", "scope": "name"}, {"term": "vegetable oil blend", "scope": "name"}, {"term": "sunflower", "scope": "name"}]
+    }
+  },
+  {
+    "query": "canned black beans",
+    "type": "product",
+    "description": "Canned black beans",
+    "relevance": {
+      "required_any": [["black", "bean"]],
+      "group_scope": "anywhere",
+      "optional": ["canned"],
+      "excluded": [{"term": "pasta", "scope": "name"}, {"term": "sauce", "scope": "name"}, {"term": "baked", "scope": "name"}]
+    }
+  }
+]

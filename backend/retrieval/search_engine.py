@@ -3,11 +3,31 @@ from typing import Any, Dict, List, Optional, Union
 
 from models.search import SearchHit, SearchResponse
 from models.search_document import SearchDocument
+from query.dictionaries import CATEGORIES, INGREDIENTS
 from query.pipeline import SearchQueryPipeline
 from query.search_query import SearchQuery
 from retrieval.filters import FiltersManager
 from retrieval.query_parser import QueryParser
 from retrieval.repository import SearchRepository
+
+
+def _is_brand_only(value: str) -> bool:
+    """A brand value that is also a category/ingredient word (e.g. 'chips', 'soy')
+    is ambiguous and must not be promoted to a hard filter."""
+    v = value.lower()
+    return v not in CATEGORIES and v not in INGREDIENTS
+
+
+def _strip_brand_from_text(text: str, brand: str) -> str:
+    """Remove the brand phrase from query text, keeping the remaining product terms."""
+    import re
+
+    stripped = re.sub(
+        r"(?<![a-z0-9])" + re.escape(brand.lower()) + r"(?![a-z0-9])",
+        " ",
+        text.lower(),
+    )
+    return re.sub(r"\s+", " ", stripped).strip()
 
 
 class SearchEngine:
@@ -74,6 +94,21 @@ class SearchEngine:
         if search_query.intent == "brand_search" or is_explicit_override(brand_entities):
             if brand_entities:
                 retrieval_filters["brand"] = brand_entities[0]["value"]
+
+        # D2 fix: under generic intent a recognized brand that is NOT also a
+        # category/ingredient word (avoids 'chips'/'soy' false positives) is promoted
+        # to a hard brand filter when product terms remain in the query text.
+        elif (
+            brand_entities
+            and search_query.intent == "generic_search"
+            and _is_brand_only(brand_entities[0]["value"])
+            and search_query.text_term
+        ):
+            brand_value = brand_entities[0]["value"]
+            remaining = _strip_brand_from_text(search_query.text_term, brand_value)
+            if remaining:
+                retrieval_filters["brand"] = brand_value
+                search_query.text_term = remaining
 
         if search_query.intent == "category_browse" or is_explicit_override(category_entities):
             if category_entities:

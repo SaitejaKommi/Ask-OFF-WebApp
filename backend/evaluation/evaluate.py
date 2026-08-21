@@ -19,6 +19,7 @@ import duckdb
 from models.search_document import SearchDocument
 from repositories.opensearch_repository import OpenSearchSearchRepository
 from retrieval.search_engine import SearchEngine
+from search.synonyms_ca import canonicalize
 
 
 class DuckDBSearchRepository:
@@ -76,15 +77,20 @@ class DuckDBSearchRepository:
         # If we have query tokens, candidates MUST match at least one token
         if tokens:
             token_conditions = []
+            from search.synonyms_ca import synonym_variants
             for t in tokens:
-                t_escaped = t.replace("'", "''")
-                token_conditions.append(
-                    f"(lower(product_name_clean) LIKE '%{t_escaped}%' "
-                    f"OR lower(brands_clean) LIKE '%{t_escaped}%' "
-                    f"OR lower(categories_clean) LIKE '%{t_escaped}%' "
-                    f"OR lower(ingredients_clean) LIKE '%{t_escaped}%' "
-                    f"OR lower(search_text) LIKE '%{t_escaped}%')"
-                )
+                variants = synonym_variants(t)
+                variant_clauses = []
+                for v in variants:
+                    v_escaped = v.replace("'", "''")
+                    variant_clauses.append(
+                        f"(lower(product_name_clean) LIKE '%{v_escaped}%' "
+                        f"OR lower(brands_clean) LIKE '%{v_escaped}%' "
+                        f"OR lower(categories_clean) LIKE '%{v_escaped}%' "
+                        f"OR lower(ingredients_clean) LIKE '%{v_escaped}%' "
+                        f"OR lower(search_text) LIKE '%{v_escaped}%')"
+                    )
+                token_conditions.append("(" + " OR ".join(variant_clauses) + ")")
             where_clauses.append("(" + " OR ".join(token_conditions) + ")")
 
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
@@ -121,14 +127,45 @@ class DuckDBSearchRepository:
             ing_lower = ing.lower()
             search_lower = search_text.lower()
 
-            # Dietary flags inference
+            # Canonicalize haystacks so synonymous spellings ('yoghurt') score same as 'yogurt'
+            from search.synonyms_ca import canonicalize
+            name_lower = canonicalize(name_lower)
+            brand_lower = canonicalize(brand_lower)
+            cat_lower = canonicalize(cat_lower)
+            ing_lower = canonicalize(ing_lower)
+            search_lower = canonicalize(search_lower)
+
+            # Parse nutriments (mirrors SearchDocumentBuilder thresholds)
+            from repositories.opensearch_repository import NUTRIENT_FIELD_MAP
+            from utils.off_parser import parse_nutriments
+            parsed_nutriments = parse_nutriments(nut_raw)
+
+            def per_100g(key):
+                entry = parsed_nutriments.get(key)
+                if isinstance(entry, dict):
+                    p = entry.get("per_100g")
+                    if p is not None:
+                        return float(p)
+                return -1.0
+
+            # Dietary flags inference (same rules as SearchDocumentBuilder)
             is_organic = "organic" in cat_lower or "organic" in ing_lower or "bio" in cat_lower or "bio" in ing_lower
             is_vegan = "vegan" in cat_lower or "vegan" in ing_lower
             is_vegetarian = "vegetarian" in cat_lower or "vegetarian" in ing_lower or is_vegan
             is_palm_oil_free = "palm oil" not in ing_lower
-            is_high_protein = "high protein" in cat_lower or "protein" in nut_raw
-            is_low_sugar = "low sugar" in cat_lower or "sugar free" in cat_lower or "no sugar" in cat_lower
+            is_high_protein = "high protein" in cat_lower or (per_100g("proteins") >= 10.0)
+            is_low_sugar = (
+                "low sugar" in cat_lower or "sugar free" in cat_lower or "no sugar" in cat_lower
+                or (0 <= per_100g("sugars") <= 5.0)
+            )
             is_gluten_free = "gluten free" in cat_lower or "gluten-free" in cat_lower or "sans gluten" in cat_lower
+            is_low_sodium = (
+                "low sodium" in cat_lower or "low salt" in cat_lower or "no salt" in cat_lower
+                or (0 <= per_100g("sodium") <= 0.12)
+            )
+            is_lactose_free = (
+                "lactose free" in cat_lower or "dairy free" in cat_lower or "sans lactose" in cat_lower
+            )
 
             # Check boolean filter flags
             if filters.get("is_organic") is True and not is_organic: continue
@@ -137,6 +174,8 @@ class DuckDBSearchRepository:
             if filters.get("is_gluten_free") is True and not is_gluten_free: continue
             if filters.get("is_high_protein") is True and not is_high_protein: continue
             if filters.get("is_low_sugar") is True and not is_low_sugar: continue
+            if filters.get("is_low_sodium") is True and not is_low_sodium: continue
+            if filters.get("is_lactose_free") is True and not is_lactose_free: continue
 
             # Parse nutriments
             from repositories.opensearch_repository import NUTRIENT_FIELD_MAP
@@ -236,7 +275,9 @@ class DuckDBSearchRepository:
                         "is_palm_oil_free": is_palm_oil_free,
                         "is_high_protein": is_high_protein,
                         "is_low_sugar": is_low_sugar,
+                        "is_low_sodium": is_low_sodium,
                         "is_gluten_free": is_gluten_free,
+                        "is_lactose_free": is_lactose_free,
                     }
                 },
                 metadata={

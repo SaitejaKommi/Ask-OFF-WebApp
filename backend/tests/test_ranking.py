@@ -81,3 +81,46 @@ class TestRankingConfiguration:
         body = mock_client.search.call_args[1]["body"]
         factor = body["query"]["function_score"]["functions"][0]["field_value_factor"]["factor"]
         assert 0.0 <= factor <= 1.0
+
+    @staticmethod
+    def _or_clause_msm(mock_client):
+        body = mock_client.search.call_args[1]["body"]
+        should = body["query"]["function_score"]["query"]["bool"]["should"]
+        layered = should[0]["bool"]["should"]
+        or_mm = layered[2]["multi_match"]
+        return or_mm["minimum_should_match"]
+
+    def test_single_token_query_keeps_minimum_one(self):
+        from unittest.mock import MagicMock
+        mock_client = MagicMock()
+        mock_client.search.return_value = {"hits": {"total": {"value": 0}, "hits": []}}
+        repo = OpenSearchSearchRepository(client=mock_client)
+        repo.search(query="7up", size=10)
+        assert self._or_clause_msm(mock_client) == 1
+
+    def test_two_token_query_requires_both(self):
+        from unittest.mock import MagicMock
+        mock_client = MagicMock()
+        mock_client.search.return_value = {"hits": {"total": {"value": 0}, "hits": []}}
+        repo = OpenSearchSearchRepository(client=mock_client)
+        repo.search(query="vegan cookies", size=10)
+        assert self._or_clause_msm(mock_client) == 2
+
+    def test_multi_token_query_requires_majority(self):
+        from unittest.mock import MagicMock
+        mock_client = MagicMock()
+        mock_client.search.return_value = {"hits": {"total": {"value": 0}, "hits": []}}
+        repo = OpenSearchSearchRepository(client=mock_client)
+        repo.search(query="frozen vegetables", size=10)
+        assert self._or_clause_msm(mock_client) == 2
+        mock_client.search.return_value = {"hits": {"total": {"value": 0}, "hits": []}}
+        repo.search(query="compliments strawberry cereal bars", size=10)
+        assert self._or_clause_msm(mock_client) == 3
+
+    def test_tiered_helper(self):
+        assert OpenSearchSearchRepository._tiered_minimum_should_match("peanute butter") == 2
+        assert OpenSearchSearchRepository._tiered_minimum_should_match("2% milk") == 2
+        assert OpenSearchSearchRepository._tiered_minimum_should_match("frozen blueberries") == 2
+        assert OpenSearchSearchRepository._tiered_minimum_should_match("7up") == 1
+        assert OpenSearchSearchRepository._tiered_minimum_should_match("strawberry cereal bars") == 2
+        assert OpenSearchSearchRepository._tiered_minimum_should_match("a b c d e f g") == 4

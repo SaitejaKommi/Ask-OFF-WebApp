@@ -1,0 +1,7 @@
+soy, soya
+yogurt, yoghurt
+color, colour
+flavor, flavour
+fillet, filet
+zucchini, courgette
+eggplant, aubergine

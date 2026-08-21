@@ -5,6 +5,7 @@ from query.entity_extractor import EntityExtractor
 from query.intent_detector import IntentDetector
 from query.normalizer import QueryNormalizer
 from query.search_query import SearchQuery
+from search.synonyms_ca import canonicalize
 
 
 class SearchQueryPipeline:
@@ -17,6 +18,7 @@ class SearchQueryPipeline:
         start_time = time.time()
 
         normalized = QueryNormalizer.normalize(raw_query)
+        normalized = canonicalize(normalized)
         constraints = ConstraintExtractor.extract(normalized)
         cleaned = constraints["cleaned_query"]
 
@@ -28,7 +30,7 @@ class SearchQueryPipeline:
         metadata = {
             "took_ms": took_ms,
             "constraint_explanations": constraints["explanations"],
-            "normalization_steps": ["lowercase", "punctuation_removal", "whitespace_collapse"]
+            "normalization_steps": ["lowercase", "punctuation_removal", "whitespace_collapse", "synonym_canonicalization"]
         }
 
         search_query = SearchQuery(

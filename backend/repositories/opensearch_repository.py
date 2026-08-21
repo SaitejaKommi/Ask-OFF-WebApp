@@ -32,6 +32,26 @@ class OpenSearchSearchRepository(SearchRepository):
         self.index = settings.opensearch_index
         self.ranking_manager = ranking_manager or RankingManager()
 
+    @staticmethod
+    def _tiered_minimum_should_match(query: str) -> int:
+        """
+        D3 fix: the OR clause must not let a single incidental token dominate.
+
+        - 1 token  : normal fuzzy (any match of the single token)
+        - 2 tokens : require 2 (both) so brand labels / off-topic docs can't fill slots
+                    (e.g. 'vegan cookies' must match vegan AND cookie)
+        - 3+ tokens: require at least half, so no single-token pollution while
+                    allowing OR-style fuzziness (e.g. 'frozen vegetables' needs >=2).
+        """
+        import re
+
+        n = len(re.findall(r"[^\s]+", query.strip()))
+        if n <= 1:
+            return 1
+        if n == 2:
+            return 2
+        return max(2, n // 2 + 1)
+
     def search(
         self,
         query: str,
@@ -76,7 +96,8 @@ class OpenSearchSearchRepository(SearchRepository):
                                 "type": "best_fields",
                                 "fuzziness": "AUTO",
                                 "operator": "or",
-                                "boost": self.ranking_manager.fuzzy_boost
+                                "boost": self.ranking_manager.fuzzy_boost,
+                                "minimum_should_match": self._tiered_minimum_should_match(query)
                             }
                         }
                     ],

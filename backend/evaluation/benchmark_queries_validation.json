@@ -1,0 +1,424 @@
+[
+  {
+    "query": "soya sauce",
+    "type": "product",
+    "description": "Soya/soy synonym generalization",
+    "relevance": {
+      "required_any": [["soy", "sauce"], ["soya", "sauce"], ["soy sauce"], ["soya sauce"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "burger", "scope": "name"}, {"term": "milk", "scope": "name"}]
+    }
+  },
+  {
+    "query": "yoghurt",
+    "type": "product",
+    "description": "Yoghurt/yogurt synonym generalization",
+    "relevance": {
+      "required_any": [["yogurt"], ["yoghurt"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "ice cream", "scope": "name"}]
+    }
+  },
+  {
+    "query": "tri-colour pasta",
+    "type": "ingredient",
+    "description": "Colour/color synonym generalization",
+    "relevance": {
+      "required_any": [["tri-colour", "pasta"], ["tri-colour", "pasta"], ["colour"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "macaroni", "scope": "name"}]
+    }
+  },
+  {
+    "query": "vanilla flavour yogurt",
+    "type": "product",
+    "description": "Flavour/flavor synonym generalization",
+    "relevance": {
+      "required_any": [["yogurt"], ["yoghurt"], ["flavour"], ["flavor"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "pudding", "scope": "name"}, {"term": "ice cream", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Compliments frozen mixed vegetables",
+    "type": "brand_product",
+    "description": "Brand + modifier + product generalization",
+    "relevance": {
+      "brand": "compliments",
+      "required_any": [["frozen", "vegetable"], ["frozen", "mix"], ["frozen", "blend"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "butter", "scope": "name"}, {"term": "pizza", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Kirkland olive oil",
+    "type": "brand_product",
+    "description": "Kirkland brand olive oil",
+    "relevance": {
+      "brand": "kirkland",
+      "required_any": [["olive", "oil"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "canola", "scope": "name"}, {"term": "sunflower", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Compliments wild berry yogurt",
+    "type": "brand_product",
+    "description": "Compliments yogurt with berry flavor",
+    "relevance": {
+      "brand": "compliments",
+      "required_any": [["yogurt"], ["yoghurt"], ["berry"], ["strawberry"], ["raspberry"], ["blueberry"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "drink", "scope": "name"}, {"term": "ice cream", "scope": "name"}]
+    }
+  },
+  {
+    "query": "frozen strawberries",
+    "type": "product_modifier",
+    "description": "Frozen modifier generalization",
+    "relevance": {
+      "required_any": [["frozen", "strawberry"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "jam", "scope": "anywhere"}, {"term": "pie", "scope": "anywhere"}, {"term": "yogurt", "scope": "name"}]
+    }
+  },
+  {
+    "query": "frozen peas",
+    "type": "product_modifier",
+    "description": "Frozen peas generalized",
+    "relevance": {
+      "required_any": [["frozen", "pea"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "soup", "scope": "anywhere"}, {"term": "snack", "scope": "name"}, {"term": "chip", "scope": "name"}]
+    }
+  },
+  {
+    "query": "organic quinoa",
+    "type": "dietary",
+    "description": "Organic grain generalization",
+    "relevance": {
+      "required_any": [["quinoa"]],
+      "group_scope": "anywhere",
+      "required_flags": {"is_organic": true},
+      "excluded": [{"term": "pasta", "scope": "name"}, {"term": "flour", "scope": "name"}]
+    }
+  },
+  {
+    "query": "gluten free cookies",
+    "type": "dietary",
+    "description": "Gluten-free cookie generalization",
+    "relevance": {
+      "required_any": [["cookie"], ["biscuit"]],
+      "required_flags": {"is_gluten_free": true},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "cookie dough", "scope": "name"}]
+    }
+  },
+  {
+    "query": "vegan granola bars",
+    "type": "dietary",
+    "description": "Vegan granola bar generalization",
+    "relevance": {
+      "required_any": [["granola", "bar"], ["cereal", "bar"]],
+      "required_flags": {"is_vegan": true},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "soap", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "palm oil free mayonnaise",
+    "type": "dietary",
+    "description": "Palm oil free condiment generalization",
+    "relevance": {
+      "required_any": [["mayonnaise"], ["mayo"]],
+      "required_flags": {"is_palm_oil_free": true},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "dressing", "scope": "name"}]
+    }
+  },
+  {
+    "query": "low sodium canned soup",
+    "type": "nutrition",
+    "description": "Low sodium soup generalization",
+    "relevance": {
+      "required_any": [["soup"]],
+      "required_flags": {"is_low_sodium": true},
+      "nutrition": {"nutrient": "sodium", "operator": "lte", "value": 0.12},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "broth", "scope": "name"}, {"term": "bouillon", "scope": "name"}]
+    }
+  },
+  {
+    "query": "high fiber bread",
+    "type": "nutrition",
+    "description": "Bread with high fiber constraint",
+    "relevance": {
+      "required_any": [["bread"]],
+      "nutrition": {"nutrient": "fiber", "operator": "gte", "value": 3.0},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "crumb", "scope": "name"}, {"term": "bagel", "scope": "name"}]
+    }
+  },
+  {
+    "query": "products with at least 10g protein",
+    "type": "nutrition_numeric",
+    "description": "Numeric protein constraint generalization",
+    "relevance": {
+      "nutrition": {"nutrient": "proteins", "operator": "gte", "value": 10.0},
+      "group_scope": "anywhere",
+      "excluded": []
+    }
+  },
+  {
+    "query": "cereal under 150 calories",
+    "type": "nutrition_numeric",
+    "description": "Low calorie cereal constraint",
+    "relevance": {
+      "required_any": [["cereal"], ["granola"], ["flake"], ["oat"]],
+      "nutrition": {"nutrient": "energy-kcal", "operator": "lte", "value": 150.0},
+      "group_scope": "anywhere",
+      "excluded": [{"term": "bar", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "canned tuna",
+    "type": "category",
+    "description": "Canned tuna category",
+    "relevance": {
+      "required_any": [["tuna"]],
+      "group_scope": "anywhere",
+      "optional": ["canned"],
+      "excluded": [{"term": "pasta", "scope": "name"}, {"term": "sauce", "scope": "name"}]
+    }
+  },
+  {
+    "query": "breakfast granola",
+    "type": "category",
+    "description": "Granola breakfast category",
+    "relevance": {
+      "required_any": [["granola"]],
+      "group_scope": "anywhere",
+      "optional": ["breakfast"],
+      "excluded": [{"term": "bar", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "cooking oil",
+    "type": "category",
+    "description": "Cooking oil category",
+    "relevance": {
+      "required_any": [["oil"]],
+      "group_scope": "anywhere",
+      "optional": ["cooking", "canola", "olive", "sunflower", "vegetable", "avocado"],
+      "excluded": [{"term": "vinaigrette", "scope": "name"}, {"term": "spray", "scope": "name"}]
+    }
+  },
+  {
+    "query": "olive oil mayonnaise",
+    "type": "product",
+    "description": "Olive oil based condiment",
+    "relevance": {
+      "required_any": [["mayonnaise"], ["mayo"]],
+      "group_scope": "anywhere",
+      "optional": ["olive"],
+      "excluded": [{"term": "salad dressing", "scope": "name"}, {"term": "vinaigrette", "scope": "name"}]
+    }
+  },
+  {
+    "query": "iced tea",
+    "type": "product",
+    "description": "Ready to drink iced tea",
+    "relevance": {
+      "required_any": [["iced", "tea"], ["ice", "tea"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "lemonade", "scope": "name"}]
+    }
+  },
+  {
+    "query": "maple flavoured syrup",
+    "type": "product",
+    "description": "Maple synonym flavor generalization",
+    "relevance": {
+      "required_any": [["maple", "syrup"]],
+      "group_scope": "anywhere",
+      "optional": ["flavour", "flavor"],
+      "excluded": [{"term": "pancake", "scope": "name"}, {"term": "table", "scope": "name"}]
+    }
+  },
+  {
+    "query": "wild salmon",
+    "type": "product",
+    "description": "Wild salmon product",
+    "relevance": {
+      "required_any": [["salmon"]],
+      "group_scope": "anywhere",
+      "optional": ["wild"],
+      "excluded": [{"term": "pet", "scope": "name"}, {"term": "dog", "scope": "name"}, {"term": "cat food", "scope": "name"}]
+    }
+  },
+  {
+    "query": "chicken breast",
+    "type": "product",
+    "description": "Chicken breast product",
+    "relevance": {
+      "required_any": [["chicken", "breast"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "nugget", "scope": "name"}, {"term": "burger", "scope": "name"}]
+    }
+  },
+  {
+    "query": "vanilla ice cream",
+    "type": "product",
+    "description": "Vanilla ice cream",
+    "relevance": {
+      "required_any": [["ice", "cream"], ["icecream"]],
+      "group_scope": "anywhere",
+      "optional": ["vanilla"],
+      "excluded": [{"term": "bar", "scope": "name"}]
+    }
+  },
+  {
+    "query": "whole grain crackers",
+    "type": "product",
+    "description": "Whole grain crackers",
+    "relevance": {
+      "required_any": [["cracker"], ["crackers"]],
+      "group_scope": "anywhere",
+      "optional": ["grain", "whole"],
+      "excluded": [{"term": "cheese", "scope": "name"}]
+    }
+  },
+  {
+    "query": "brown rice",
+    "type": "product",
+    "description": "Brown rice product",
+    "relevance": {
+      "required_any": [["brown", "rice"], ["rice", "brown"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "milk", "scope": "name"}, {"term": "flour", "scope": "name"}, {"term": "paper", "scope": "name"}, {"term": "snack", "scope": "name"}]
+    }
+  },
+  {
+    "query": "red lentils",
+    "type": "product",
+    "description": "Red lentils product",
+    "relevance": {
+      "required_any": [["lentil"]],
+      "group_scope": "anywhere",
+      "optional": ["red"],
+      "excluded": [{"term": "soup", "scope": "name"}, {"term": "flour", "scope": "name"}]
+    }
+  },
+  {
+    "query": "corn chips",
+    "type": "product",
+    "description": "Corn chips snack",
+    "relevance": {
+      "required_any": [["corn", "chip"], ["corn", "crisp"], ["tortilla"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "popcorn", "scope": "name"}]
+    }
+  },
+  {
+    "query": "Kellogg's corn flakes",
+    "type": "brand_product",
+    "description": "Kellogg's branded cereal",
+    "relevance": {
+      "brand": "kellogg",
+      "required_any": [["corn", "flake"], ["flake"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "bar", "scope": "name"}]
+    }
+  },
+  {
+    "query": "alphabet children pasta",
+    "type": "product",
+    "description": "Children alphabet pasta",
+    "relevance": {
+      "required_any": [["pasta"], ["macaroni"]],
+      "group_scope": "anywhere",
+      "optional": ["alphabet", "children", "kids"],
+      "excluded": [{"term": "sauce", "scope": "name"}, {"term": "salad", "scope": "name"}]
+    }
+  },
+  {
+    "query": "strawberry jam",
+    "type": "product",
+    "description": "Strawberry jam spread",
+    "relevance": {
+      "required_any": [["strawberry", "jam"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "cake", "scope": "name"}, {"term": "fill", "scope": "name"}, {"term": "gummy", "scope": "name"}]
+    }
+  },
+  {
+    "query": "agave syrup",
+    "type": "product",
+    "description": "Agave syrup sweetener",
+    "relevance": {
+      "required_any": [["agave", "syrup"], ["agave", "nectar"], ["agave"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "taco", "scope": "name"}]
+    }
+  },
+  {
+    "query": "carbonated water",
+    "type": "product",
+    "description": "Sparkling water beverage",
+    "relevance": {
+      "required_any": [["carbonated", "water"], ["sparkling", "water"], ["soda", "water"], ["mineral", "water"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "flavoured", "scope": "name"}, {"term": "flavored", "scope": "name"}]
+    }
+  },
+  {
+    "query": "italian dressing",
+    "type": "product",
+    "description": "Italian salad dressing",
+    "relevance": {
+      "required_any": [["italian", "dressing"], ["dressing"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "mayonnaise", "scope": "name"}, {"term": "sauce", "scope": "name"}]
+    }
+  },
+  {
+    "query": "mayonnaise",
+    "type": "product",
+    "description": "Mayonnaise condiment",
+    "relevance": {
+      "required_any": [["mayonnaise"], ["mayo"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "dressing", "scope": "name"}, {"term": "spread", "scope": "name"}]
+    }
+  },
+  {
+    "query": "mozzarella cheese",
+    "type": "product",
+    "description": "Mozzarella cheese dairy",
+    "relevance": {
+      "required_any": [["mozzarella", "cheese"], ["mozzarella"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "cracker", "scope": "name"}, {"term": "seasoning", "scope": "name"}]
+    }
+  },
+  {
+    "query": "almond flour",
+    "type": "product",
+    "description": "Almond flour baking",
+    "relevance": {
+      "required_any": [["almond", "flour"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "protein bar", "scope": "name"}, {"term": "cookie", "scope": "name"}]
+    }
+  },
+  {
+    "query": "turmeric",
+    "type": "ingredient",
+    "description": "Turmeric spice",
+    "relevance": {
+      "required_any": [["turmeric"]],
+      "group_scope": "anywhere",
+      "excluded": [{"term": "supplement", "scope": "name"}, {"term": "curry", "scope": "name"}]
+    }
+  }
+]
